@@ -1,21 +1,19 @@
+from flask import Flask, jsonify, request, render_template
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from flask_cors import CORS
+from config import Development
 from models import db
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
-app.config['ENV'] = 'development'
-app.config['DEBUG'] = True 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
+app.config.from_object(Development)
 
 db.init_app(app)
 Migrate(app, db)
 manager = Manager(app)
 manager.add_command("db", MigrateCommand)
 
-CORS(app)
 
 @app.route("/")
 def main():
