@@ -12,6 +12,8 @@ flask-migrate = "*"
 flask-cors = "*"
 flask-sqlalchemy = "*"
 pymysql = "*"
+cryptography = "*"
+flask-jwt-extended = "*"
 
 [requires]
 python_version = "3.8"
@@ -21,3 +23,4 @@ start="python app.py runserver"
 init="python app.py db init"
 migrate="python app.py db migrate"
 upgrade="python app.py db upgrade"
+downgrade="python app.py db downgrade"
