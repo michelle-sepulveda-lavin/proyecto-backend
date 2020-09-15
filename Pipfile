@@ -12,6 +12,7 @@ flask-migrate = "*"
 flask-cors = "*"
 flask-sqlalchemy = "*"
 pymysql = "*"
+cryptography = "*"
 
 [requires]
 python_version = "3.8"
