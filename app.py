@@ -45,39 +45,48 @@ def login():
     if not check_password_hash(user.password, password):
         return jsonify({"msg": "username/password is incorrect"}), 401
 
-    expire_in = datetime.timedelta(days=3)
+    expire_in = datetime.timedelta(days=1)
     data = {
         "access_token": create_access_token(identity=user.id, expires_delta=expire_in),
         "user": user.serialize()
     }
     return jsonify(data), 200
 
-@app.route("/register", methods=['POST'])
+@app.route("/register", methods=['POST', 'GET'])
 def register():
-    username = request.json.get("username", None)
-    password = request.json.get("password", None)
+    if request.method == 'POST':
+        username = request.json.get("username", None)
+        password = request.json.get("password", None)
+        rol_id = request.json.get("rol_id", None)
 
-    if not username:
-        return jsonify({"msg": "username is required"}), 400
-    if not password:
-        return jsonify({"msg": "password is required"}), 400
-    
-    user = User.query.filter_by(username=username).first()
+        if not username:
+            return jsonify({"msg": "username is required"}), 400
+        if not password:
+            return jsonify({"msg": "password is required"}), 400
+        if not rol_id:
+            return jsonify({"msg": "rol_id is required"})
+        
+        user = User.query.filter_by(username=username).first()
 
-    if user:
-        return jsonify({"msg": "user already exists"}), 400
+        if user:
+            return jsonify({"msg": "user already exists"}), 400
 
-    user = User()
-    user.username = username
-    user.password = generate_password_hash(password)
-    user.save()
+        user = User()
+        user.username = username
+        user.password = generate_password_hash(password)
+        user.rol_id = rol_id
+        user.save()
 
-    expire_in = datetime.timedelta(days=3)
-    data = {
-        "access_token": create_access_token(identity=user.id, expires_delta=expire_in),
-        "user": user.serialize()
-    }
-    return jsonify(data), 200
+        expire_in = datetime.timedelta(days=1)
+        data = {
+            "access_token": create_access_token(identity=user.id, expires_delta=expire_in),
+            "user": user.serialize()
+        }
+        return jsonify(data), 200
+    if request.method == 'GET':
+        usuarios = User.query.all()
+        usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
+        return jsonify(usuarios), 200
 
 @app.route("/administrador")
 @jwt_required
@@ -87,7 +96,7 @@ def administrador():
 
     return jsonify(user.serialize()), 200
 
-@app.route("/roles", methods=['POST', 'GET'])
+@app.route("/roles", methods=['POST', 'GET', 'PUT'])
 @app.route("/roles/<int:id>", methods=['DELETE'])
 def roles(id=None):
     if request.method == 'GET':
@@ -114,6 +123,24 @@ def roles(id=None):
                 new_rol.save()
 
                 return jsonify({"msg": "role created successfully"}), 200
+    
+    if request.method == 'PUT':
+        rol = request.json.get("rol")
+        id = request.json.get("id")
+
+        if not rol:
+            return jsonify({"msg": "rol is required"}), 400
+        if not id:
+            return jsonify({"msg": "id is required"}), 400
+        
+        id_role = Role.query.filter_by(id=id).first()
+
+        if not id_role:
+            return jsonify({"msg": "id does not exists"}), 404
+        else:
+            id_role.rol = rol
+            id_role.update()
+            return jsonify({"msg": "rol updated successfully"}), 404 
 
     if request.method == 'DELETE':
         rol = Role.query.filter_by(id=id).first()
