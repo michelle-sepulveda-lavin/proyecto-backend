@@ -6,7 +6,11 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
+<<<<<<< HEAD
 from models import db, User, Role, Plan, InfoContacto
+=======
+from models import db, User, Role, Plan, Edificio
+>>>>>>> 722d657e22fce07b27c6ea2adae3688747ffcb41
 import json
 
 app = Flask(__name__)
@@ -33,17 +37,17 @@ def login():
     password = request.json.get("password", None)
 
     if not username:
-        return jsonify({"msg": "username is required"}), 400
+        return jsonify({"msg": "El usuario es requerido"}), 400
     if not password:
-        return jsonify({"msg": "password is required"}), 400
+        return jsonify({"msg": "La contraseña es requerida"}), 400
     
     user = User.query.filter_by(username=username).first()
 
     if not user:
-        return jsonify({"msg": "username/password is incorrect"}), 401
+        return jsonify({"msg": "El usuario/contraseña es incorrecta"}), 401
 
     if not check_password_hash(user.password, password):
-        return jsonify({"msg": "username/password is incorrect"}), 401
+        return jsonify({"msg": "El usuario/contraseña es incorrecta"}), 401
 
     expire_in = datetime.timedelta(days=1)
     data = {
@@ -53,7 +57,8 @@ def login():
     return jsonify(data), 200
 
 @app.route("/register", methods=['POST', 'GET'])
-def register():
+@app.route("/register/<int:id>", methods=['PUT', 'DELETE'])
+def register(id=None):
     if request.method == 'POST':
         username = request.json.get("username", None)
         password = request.json.get("password", None)
@@ -85,8 +90,42 @@ def register():
         return jsonify(data), 200
     if request.method == 'GET':
         usuarios = User.query.all()
-        usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
-        return jsonify(usuarios), 200
+        if not usuarios:
+            return jsonify({"msg": "Lista vacia, usar metodo POST"}), 404
+        else:
+            usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
+            return jsonify(usuarios), 200
+    if request.method == 'PUT':
+        user = User.query.filter_by(id=id).first()
+        
+        if not user:
+            return jsonify({"msg": "el usuario no existe"}), 400
+
+        username = request.json.get("username", None)
+        password = request.json.get("password", None)
+        rol_id = request.json.get("rol_id", None)
+
+        if not username:
+            return jsonify({"msg": "username is required"}), 400
+        if not password:
+            return jsonify({"msg": "password is required"}), 400
+        if not rol_id:
+            return jsonify({"msg": "rol_id is required"}), 400
+        
+        user.username = username
+        user.password = generate_password_hash(password)
+        user.rol_id = rol_id
+        user.update()
+        return jsonify({"msg": "usuario actualizado correctamente"}), 200
+
+    if request.method == 'DELETE':
+        user = User.query.filter_by(id=id).first()
+        if not user:
+            return jsonify({"msg": "el usuario no existe"}), 400
+        else:
+            user.delete()
+            return jsonify({"msg": "usuario eliminado correctamente"}), 200
+
 
 @app.route("/administrador")
 @jwt_required
@@ -224,6 +263,7 @@ def plan_put(id):
 
     return jsonify({"Msg": "Plan Actualizado"})
 
+<<<<<<< HEAD
 @app.route("/api/info-contacto", methods=['POST', 'GET'])
 @app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT"])
 def info_Contacto(email=None):
@@ -287,6 +327,159 @@ def info_Contacto(email=None):
         
 
    
+=======
+@app.route("/crearedificio/<int:id>", methods=['DELETE', 'PUT'])
+@app.route("/crearedificio", methods=['POST', 'GET'])
+def crearEdificio(id=None):
+    if request.method == 'GET':
+        edificios = Edificio.query.all()
+        if not edificios:
+            return jsonify({"msg": "No hay edificios, usar metodo POST"}), 200
+        else:
+            edificios = list(map(lambda edificio: edificio.serialize(), edificios))
+            return jsonify(edificios), 200
+    if request.method == 'POST':
+        nombre_edificio = request.json.get("nombre_edificio")
+        direccion = request.json.get("direccion")
+        nombre_administrador = request.json.get("nombre_administrador")
+        telefono = request.json.get("telefono")
+        correo = request.json.get("correo")
+        numero_pisos = request.json.get("numero_pisos")
+        numero_departamentos = request.json.get("numero_departamentos")
+        total_bodegas = request.json.get("total_bodegas")
+        total_estacionamientos = request.json.get("total_estacionamientos")
+        inicio_contratacion = request.json.get("inicio_contratacion")
+        termino_contrato = request.json.get("termino_contrato")
+        dia_vencimiento = request.json.get("dia_vencimiento")
+        plan_id = request.json.get("plan_id")
+        username_id = request.json.get("username_id")
+
+        if not nombre_edificio:
+            return ({"msg": "nombre_edificio es requerido"})
+        if not nombre_administrador:
+            return ({"msg": "nombre_administrador es requerido"})
+        if not direccion:
+            return ({"msg": "direccion es requerido"})
+        if not telefono:
+            return ({"msg": "telefono es requerido"})
+        if not correo:
+            return ({"msg": "correo es requerido"})
+        if not numero_pisos:
+            return ({"msg": "numero_pisos es requerido"})
+        if not numero_departamentos:
+            return ({"msg": "numero_departamentos es requerido"})
+        if not total_bodegas:
+            return ({"msg": "total_bodegas es requerido"})
+        if not total_estacionamientos:
+            return ({"msg": "total_estacionamientos es requerido"})
+        if not inicio_contratacion:
+            return ({"msg": "inicio_contratacion es requerido"})
+        if not termino_contrato:
+            return ({"msg": "termino_contrato es requerido"})
+        if not dia_vencimiento:
+            return ({"msg": "dia_vencimiento es requerido"})
+        if not plan_id:
+            return ({"msg": "plan_id es requerido"})
+        if not username_id:
+            return ({"msg": "username_id es requerido"})
+        
+        edificio = Edificio()
+        edificio.nombre_edificio = nombre_edificio
+        edificio.nombre_administrador = nombre_administrador
+        edificio.direccion = direccion
+        edificio.telefono = telefono
+        edificio.correo = correo
+        edificio.numero_pisos = int(numero_pisos)
+        edificio.numero_departamentos = int(numero_departamentos)
+        edificio.total_bodegas = int(total_bodegas)
+        edificio.total_estacionamientos = int(total_estacionamientos)
+        edificio.inicio_contratacion = inicio_contratacion
+        edificio.termino_contrato = termino_contrato
+        edificio.dia_vencimiento = dia_vencimiento
+        edificio.plan_id = int(plan_id)
+        edificio.username_id = int(username_id)
+        edificio.save()
+
+        return jsonify({"msg": "Edificio creado"}), 200
+
+    if request.method == 'DELETE':
+        edificio = Edificio.query.filter_by(id=id).first()
+
+        if not edificio:
+            return jsonify({"msg": "El edificio no existe"}), 404
+        else:
+            edificio.delete()
+            return jsonify({"msg": "El edificio ha sido eliminado exitosamente"}), 200
+
+    if request.method == 'PUT':
+        edificio = Edificio.query.filter_by(id=id).first()
+
+        if not edificio:
+            return jsonify({"msg": "El edificio no existe"}), 404
+        
+        else:
+            nombre_edificio = request.json.get("nombre_edificio")
+            direccion = request.json.get("direccion")
+            nombre_administrador = request.json.get("nombre_administrador")
+            telefono = request.json.get("telefono")
+            correo = request.json.get("correo")
+            numero_pisos = request.json.get("numero_pisos")
+            numero_departamentos = request.json.get("numero_departamentos")
+            total_bodegas = request.json.get("total_bodegas")
+            total_estacionamientos = request.json.get("total_estacionamientos")
+            inicio_contratacion = request.json.get("inicio_contratacion")
+            termino_contrato = request.json.get("termino_contrato")
+            dia_vencimiento = request.json.get("dia_vencimiento")
+            plan_id = request.json.get("plan_id")
+            username_id = request.json.get("username_id")
+
+            if not nombre_edificio:
+                return ({"msg": "nombre_edificio es requerido"})
+            if not nombre_administrador:
+                return ({"msg": "nombre_administrador es requerido"})
+            if not direccion:
+                return ({"msg": "direccion es requerido"})
+            if not telefono:
+                return ({"msg": "telefono es requerido"})
+            if not correo:
+                return ({"msg": "correo es requerido"})
+            if not numero_pisos:
+                return ({"msg": "numero_pisos es requerido"})
+            if not numero_departamentos:
+                return ({"msg": "numero_departamentos es requerido"})
+            if not total_bodegas:
+                return ({"msg": "total_bodegas es requerido"})
+            if not total_estacionamientos:
+                return ({"msg": "total_estacionamientos es requerido"})
+            if not inicio_contratacion:
+                return ({"msg": "inicio_contratacion es requerido"})
+            if not termino_contrato:
+                return ({"msg": "termino_contrato es requerido"})
+            if not dia_vencimiento:
+                return ({"msg": "dia_vencimiento es requerido"})
+            if not plan_id:
+                return ({"msg": "plan_id es requerido"})
+            if not username_id:
+                return ({"msg": "username_id es requerido"})
+        
+            edificio.nombre_edificio = nombre_edificio
+            edificio.nombre_administrador = nombre_administrador
+            edificio.direccion = direccion
+            edificio.telefono = telefono
+            edificio.correo = correo
+            edificio.numero_pisos = int(numero_pisos)
+            edificio.numero_departamentos = int(numero_departamentos)
+            edificio.total_bodegas = int(total_bodegas)
+            edificio.total_estacionamientos = int(total_estacionamientos)
+            edificio.inicio_contratacion = inicio_contratacion
+            edificio.termino_contrato = termino_contrato
+            edificio.dia_vencimiento = dia_vencimiento
+            edificio.plan_id = int(plan_id)
+            edificio.username_id = int(username_id)
+            edificio.update()
+
+            return jsonify({"msg": "Edificio actualizado correctamente"}), 200
+>>>>>>> 722d657e22fce07b27c6ea2adae3688747ffcb41
 
 if __name__ == "__main__":
     manager.run()
