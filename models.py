@@ -99,7 +99,16 @@ class InfoContacto(db.Model):
             "plan": self.plan,
             "state": self.state
 
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
             
 class Edificio(db.Model):
@@ -149,8 +158,5 @@ class Edificio(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-    
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+
         
