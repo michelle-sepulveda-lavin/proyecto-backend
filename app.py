@@ -263,7 +263,6 @@ def plan_put(id):
 
     return jsonify({"Msg": "Plan Actualizado"})
 
-<<<<<<< HEAD
 @app.route("/api/info-contacto", methods=['POST', 'GET'])
 @app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT"])
 def info_Contacto(email=None):
@@ -327,7 +326,6 @@ def info_Contacto(email=None):
         
 
    
-=======
 @app.route("/crearedificio/<int:id>", methods=['DELETE', 'PUT'])
 @app.route("/crearedificio", methods=['POST', 'GET'])
 def crearEdificio(id=None):
@@ -479,7 +477,6 @@ def crearEdificio(id=None):
             edificio.update()
 
             return jsonify({"msg": "Edificio actualizado correctamente"}), 200
->>>>>>> 722d657e22fce07b27c6ea2adae3688747ffcb41
 
 if __name__ == "__main__":
     manager.run()
