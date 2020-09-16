@@ -98,7 +98,7 @@ class InfoContacto(db.Model):
             "phone": self.phone,
             "plan": self.plan,
             "state": self.state
-
+        }
     def save(self):
         db.session.add(self)
         db.session.commit()

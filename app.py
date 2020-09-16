@@ -6,11 +6,7 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-<<<<<<< HEAD
-from models import db, User, Role, Plan, InfoContacto
-=======
-from models import db, User, Role, Plan, Edificio
->>>>>>> 722d657e22fce07b27c6ea2adae3688747ffcb41
+from models import db, User, Role, Plan, Edificio, InfoContacto
 import json
 
 app = Flask(__name__)
