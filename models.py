@@ -77,3 +77,35 @@ class Role(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+""" TABLA DE CLIENTES A CONTACTAR """
+
+class InfoContacto(db.Model):
+    __tablename__ = "infoContacto"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique = True)
+    phone = db.Column(db.Integer, nullable=False)
+    state = db.Column(db.Boolean, nullable=True, default=True)
+    plan = db.Column(db.String(250), nullable=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "plan": self.plan,
+            "state": self.state
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()

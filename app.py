@@ -6,7 +6,7 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan
+from models import db, User, Role, Plan, InfoContacto
 import json
 
 app = Flask(__name__)
@@ -190,7 +190,7 @@ def plan_post():
     plan.save()
     return jsonify({"Msg": "Plan Añadido"})
 
-@app.route("/api/planes/<id>", methods=['DELETE'])  
+@app.route("/api/planes/<int:id>", methods=['DELETE'])  
 def plan_delete(id):
     plan = Plan.query.filter_by(id=id).first()
     if not plan:
@@ -199,7 +199,7 @@ def plan_delete(id):
         plan.delete()
         return jsonify({"msg": "Plan borrado"})
 
-@app.route("/api/planes/<id>", methods=['PUT'])  
+@app.route("/api/planes/<int:id>", methods=['PUT'])  
 def plan_put(id):
     plan = Plan.query.filter_by(id=id).first()
 
@@ -223,7 +223,71 @@ def plan_put(id):
     plan.update()
 
     return jsonify({"Msg": "Plan Actualizado"})
+
+@app.route("/api/info-contacto", methods=['POST', 'GET'])
+@app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT"])
+def info_Contacto(email=None):
+    if request.method == 'GET':
+        contactos = InfoContacto.query.all()
+
+        if not contactos:
+            return jsonify({"msg": "empty list"}), 404
+        else:
+            info = list(map(lambda contacto: contacto.serialize(), contactos))
+            return jsonify(info), 200
+
+    if request.method == 'POST':
+
+        contact_name = request.json.get("name", None)
+        contact_email = request.json.get("email", None)
+        contact_phone = request.json.get("phone", None)
+        contact_plan = request.json.get("plan", None)
+
+        if not contact_name:
+            return jsonify({"msg": "El nombre es necesario"}), 404
+        if not contact_email:
+            return jsonify({"msg": "El email es necesario"}), 404
+        if not contact_phone:
+            return jsonify({"msg": "El teléfono es necesario"}), 404
+        if not contact_plan:
+            return jsonify({"msg": "El plan es necesario"}), 404
+
+        contacto_existente = InfoContacto.query.filter_by(email = contact_email).first()
+        if contacto_existente:
+            return jsonify({"msg": "Contacto ya existe"}), 400
+        else:
+            contacto = InfoContacto()
+            contacto.name = contact_name
+            contacto.email = contact_email
+            contacto.phone = contact_phone
+            contacto.plan = contact_plan
+            contacto.save()
+
+        return jsonify({"Msg": "Contacto Añadido"})
+
+    if request.method == 'DELETE':
+        contacto_existente = InfoContacto.query.filter(InfoContacto.email==email).first()
+        if contacto_existente:
+            contacto_existente.delete()
+            return jsonify({"msg": "Plan borrado"})
+        else:
+            return jsonify({"msg": "Contacto no existe"})
+
+    if request.method == 'PUT':
+        contact = InfoContacto.query.filter_by(email=email).first()
+
+        contact_state = request.json.get("state", None)
+
+        if contact_state:
+            contact.state = contact_state
+           
+        contact.update()
+
+        return jsonify({"Msg": "Plan Actualizado"})
+        
+
    
 
 if __name__ == "__main__":
     manager.run()
+
