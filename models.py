@@ -8,7 +8,7 @@ class User(db.Model):
     username = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(120), nullable=False)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
-
+    edificios = db.relationship("Edificio", backref="user")
 
     def serialize(self):
         return{
@@ -35,6 +35,7 @@ class Plan(db.Model):
     body = db.Column(db.Text, nullable=True, default=None)
     price = db.Column(db.Integer, nullable=False)
     frecuencia = db.Column(db.String(150), nullable=False)
+    edificios = db.relationship("Edificio", backref="plane")
     def serialize(self):
         return {
             "id": self.id,
@@ -77,3 +78,52 @@ class Role(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+class Edificio(db.Model):
+    __tablename__ = "edificios"
+    id = db.Column(db.Integer, primary_key=True)
+    nombre_edificio = db.Column(db.String(120), nullable=False)
+    direccion = db.Column(db.String(120), nullable=False)
+    nombre_administrador = db.Column(db.String(120), nullable=False)
+    telefono = db.Column(db.String(12), nullable=False)
+    correo = db.Column(db.String(120), nullable=False)
+    numero_pisos = db.Column(db.Integer, nullable=False)
+    numero_departamentos = db.Column(db.Integer, nullable=False)
+    total_bodegas = db.Column(db.Integer, nullable=False)
+    total_estacionamientos = db.Column(db.Integer, nullable=False)
+    inicio_contratacion = db.Column(db.String(120), nullable=False)
+    termino_contrato = db.Column(db.String(120), nullable=False)
+    dia_vencimiento = db.Column(db.String(120), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('planes.id'), nullable=False)
+    username_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "nombre_edificio": self.nombre_edificio,
+            "direccion": self.direccion,
+            "nombre_administrador": self.nombre_administrador,
+            "telefono": self.telefono,
+            "correo": self.correo,
+            "numero_pisos": self.numero_pisos,
+            "numero_departamentos": self.numero_departamentos,
+            "total_bodegas": self.total_bodegas,
+            "inicio_contratacion": self.inicio_contratacion,
+            "inicio_contratacion": self.inicio_contratacion,
+            "termino_contrato": self.termino_contrato,
+            "dia_vencimiento": self.dia_vencimiento,
+            "plan_id": self.plan_id,
+            "username_id": self.username_id
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
