@@ -7,6 +7,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     edificios = db.relationship("Edificio", backref="user")
 
@@ -14,6 +15,7 @@ class User(db.Model):
         return{
             "id": self.id,
             "username": self.username,
+            "email": self.email,
             "rol_id": self.rol_id
         }
         
