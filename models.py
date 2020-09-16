@@ -5,9 +5,9 @@ import json
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(120), nullable=False, unique=True)
+    username = db.Column(db.String(120), nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     edificios = db.relationship("Edificio", backref="user")
 
@@ -142,7 +142,7 @@ class Edificio(db.Model):
             "numero_pisos": self.numero_pisos,
             "numero_departamentos": self.numero_departamentos,
             "total_bodegas": self.total_bodegas,
-            "inicio_contratacion": self.inicio_contratacion,
+            "total_estacionamientos": self.total_estacionamientos,
             "inicio_contratacion": self.inicio_contratacion,
             "termino_contrato": self.termino_contrato,
             "dia_vencimiento": self.dia_vencimiento,

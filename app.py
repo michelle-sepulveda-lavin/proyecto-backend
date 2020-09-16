@@ -59,12 +59,15 @@ def register(id=None):
         username = request.json.get("username", None)
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
+        email = request.json.get("email", None)
 
         if not username:
             return jsonify({"msg": "username is required"}), 400
         if not password:
             return jsonify({"msg": "password is required"}), 400
         if not rol_id:
+            return jsonify({"msg": "rol_id is required"})
+        if not email:
             return jsonify({"msg": "rol_id is required"})
         
         user = User.query.filter_by(username=username).first()
@@ -76,6 +79,7 @@ def register(id=None):
         user.username = username
         user.password = generate_password_hash(password)
         user.rol_id = rol_id
+        user.email = email
         user.save()
 
         expire_in = datetime.timedelta(days=1)
@@ -91,6 +95,7 @@ def register(id=None):
         else:
             usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
             return jsonify(usuarios), 200
+
     if request.method == 'PUT':
         user = User.query.filter_by(id=id).first()
         
@@ -100,6 +105,7 @@ def register(id=None):
         username = request.json.get("username", None)
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
+        email = request.json.get("email", None)
 
         if not username:
             return jsonify({"msg": "username is required"}), 400
@@ -107,10 +113,13 @@ def register(id=None):
             return jsonify({"msg": "password is required"}), 400
         if not rol_id:
             return jsonify({"msg": "rol_id is required"}), 400
+        if not email:
+            return jsonify({"msg": "email is required"}), 400
         
         user.username = username
         user.password = generate_password_hash(password)
         user.rol_id = rol_id
+        user.email = email
         user.update()
         return jsonify({"msg": "usuario actualizado correctamente"}), 200
 
@@ -122,6 +131,17 @@ def register(id=None):
             user.delete()
             return jsonify({"msg": "usuario eliminado correctamente"}), 200
 
+@app.route("/recuperar-password", methods=['POST'])
+def recuperacion():
+    email = request.json.get("email")
+    if not email:
+        return jsonify({"msg": "email es requerido"}), 400
+    else:
+        correo = User.query.filter_by(email=email).first()
+        if not correo:
+            return jsonify({"msg": "email no existe"}), 404
+        else:
+            return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 200
 
 @app.route("/administrador")
 @jwt_required
@@ -348,34 +368,44 @@ def crearEdificio(id=None):
         plan_id = request.json.get("plan_id")
         username_id = request.json.get("username_id")
 
+        plan = Edificio.query.filter_by(plan_id=plan_id).first()
+        username = Edificio.query.filter_by(username_id=username_id).first()
+
         if not nombre_edificio:
-            return ({"msg": "nombre_edificio es requerido"})
+            return ({"msg": "nombre_edificio es requerido"}), 404
         if not nombre_administrador:
-            return ({"msg": "nombre_administrador es requerido"})
+            return ({"msg": "nombre_administrador es requerido"}), 404
         if not direccion:
-            return ({"msg": "direccion es requerido"})
+            return ({"msg": "direccion es requerido"}), 404
         if not telefono:
-            return ({"msg": "telefono es requerido"})
+            return ({"msg": "telefono es requerido"}), 404
         if not correo:
-            return ({"msg": "correo es requerido"})
+            return ({"msg": "correo es requerido"}), 404
         if not numero_pisos:
-            return ({"msg": "numero_pisos es requerido"})
+            return ({"msg": "numero_pisos es requerido"}), 404
         if not numero_departamentos:
-            return ({"msg": "numero_departamentos es requerido"})
+            return ({"msg": "numero_departamentos es requerido"}), 404
         if not total_bodegas:
-            return ({"msg": "total_bodegas es requerido"})
+            return ({"msg": "total_bodegas es requerido"}), 404
         if not total_estacionamientos:
-            return ({"msg": "total_estacionamientos es requerido"})
+            return ({"msg": "total_estacionamientos es requerido"}), 404
         if not inicio_contratacion:
-            return ({"msg": "inicio_contratacion es requerido"})
+            return ({"msg": "inicio_contratacion es requerido"}), 404
         if not termino_contrato:
-            return ({"msg": "termino_contrato es requerido"})
+            return ({"msg": "termino_contrato es requerido"}), 404
         if not dia_vencimiento:
-            return ({"msg": "dia_vencimiento es requerido"})
+            return ({"msg": "dia_vencimiento es requerido"}), 404
+        if int(dia_vencimiento) > 31:
+            return jsonify({"msg": "el dia vencimiento no es valido"}), 400
         if not plan_id:
-            return ({"msg": "plan_id es requerido"})
+            return ({"msg": "plan_id es requerido"}), 404
+        if not plan:
+            return jsonify({"msg": "plan id incorrecto"}), 400 
         if not username_id:
-            return ({"msg": "username_id es requerido"})
+            return ({"msg": "username_id es requerido"}), 404
+        if not username:
+            return jsonify({"msg": "usuario id incorrecto"}), 400
+
         
         edificio = Edificio()
         edificio.nombre_edificio = nombre_edificio
