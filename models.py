@@ -87,7 +87,7 @@ class InfoContacto(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique = True)
     phone = db.Column(db.Integer, nullable=False)
-    state = db.Column(db.Boolean, nullable=True, default=True)
+    state = db.Column(db.Boolean, nullable=True, default=None)
     plan = db.Column(db.String(250), nullable=False)
 
     def serialize(self):

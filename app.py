@@ -260,7 +260,7 @@ def plan_put(id):
     return jsonify({"Msg": "Plan Actualizado"})
 
 @app.route("/api/info-contacto", methods=['POST', 'GET'])
-@app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT"])
+@app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT", "PATCH"])
 def info_Contacto(email=None):
     if request.method == 'GET':
         contactos = InfoContacto.query.all()
@@ -308,17 +308,23 @@ def info_Contacto(email=None):
         else:
             return jsonify({"msg": "Contacto no existe"})
 
-    if request.method == 'PUT':
-        contact = InfoContacto.query.filter_by(email=email).first()
+    if request.method == 'PATCH':
+        contact = InfoContacto.query.filter(InfoContacto.email==email).first()
 
         contact_state = request.json.get("state", None)
 
-        if contact_state:
+        if not contact:
+            print(type(contact_state))
+            return jsonify({"msg": "No existe ese email"})
+        
+        if type(contact_state) == bool:
             contact.state = contact_state
-           
-        contact.update()
+            contact.update()
+            return jsonify({"Msg": "Plan Actualizado"})
+        else:
+            return jsonify({"msg": "El state debe ser True o False"})
 
-        return jsonify({"Msg": "Plan Actualizado"})
+       
         
 
    
