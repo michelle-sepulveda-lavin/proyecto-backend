@@ -390,8 +390,8 @@ def crearEdificio(id=None):
         plan_id = request.json.get("plan_id")
         username_id = request.json.get("username_id")
 
-        plan = Edificio.query.filter_by(plan_id=plan_id).first()
-        username = Edificio.query.filter_by(username_id=username_id).first()
+        plan = Plan.query.filter_by(id=plan_id).first()
+        username = User.query.filter_by(id=username_id).first()
 
         if not nombre_edificio:
             return ({"msg": "nombre_edificio es requerido"}), 404
