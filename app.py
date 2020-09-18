@@ -13,6 +13,7 @@ import sendgrid
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import *
 
+
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config.from_object(Development)
@@ -88,7 +89,7 @@ def register(id=None):
 
         expire_in = datetime.timedelta(days=1)
         data = {
-            "access_token": create_access_token(identity=user.id, expires_delta=expire_in),
+            "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
             "user": user.serialize()
         }
         return jsonify(data), 200
@@ -146,18 +147,40 @@ def recuperacion():
             from_email = Email("edificios.felices.cl@gmail.com")
             to_email = To("edificios.felices.cl@gmail.com")
             subject = "Email Recuperacion"
-            expire_in = datetime.timedelta(days=1)
+            expire_in = datetime.timedelta(hours=1)
             data = {
             "access_token": create_access_token(identity=correo.id, expires_delta=expire_in),
             }
-            mensaje = "Para recuperar tu contraseña, usa el siguiente"
-            content = Content("text/plain", data["access_token"]  )
+            mensaje2 = "Para recuperar tu contraseña, usa el siguiente "
+            url = "http://localhost:3000/recuperacion-password/" + data["access_token"]
+            mensaje = f"<html><head></head><body>Para recuperar tu contraseña, usa el siguiente <a href=\"{url}\">Link</a></body></html>"
+            content = Content("text/html", mensaje)
             mail = Mail(from_email, to_email, subject, content)
             response = sg.client.mail.send.post(request_body=mail.get())
             print(response.status_code)
             print(response.body)
             print(response.headers)
             return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 200
+
+@app.route("/reset-password", methods=['POST'])
+@jwt_required
+def resetearPassword():
+    contraseña = request.json.get("password")
+
+    id = get_jwt_identity()
+    user = User.query.get(id)
+    if user:
+
+        user.password = generate_password_hash(contraseña)
+        user.save()
+        expire_in = datetime.timedelta(days=1)
+        data = {
+            "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+            "user": user.serialize()
+        }
+        return jsonify({"msg": "contraseña cambiada exitosamente"}), 200
+    if not user:
+        return jsonify({"msg": "usuario no encontrado"}), 404 
 
 @app.route("/administrador")
 @jwt_required
