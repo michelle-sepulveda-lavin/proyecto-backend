@@ -398,7 +398,6 @@ def crearEdificio(id=None):
         username_id = request.json.get("username_id")
 
         plan = Plan.query.filter_by(id=plan_id).first()
-        
         username = User.query.filter_by(id=username_id).first()
 
         if not nombre_edificio:
