@@ -322,7 +322,7 @@ def plan_put(id):
 @app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT", "PATCH"])
 def info_Contacto(email=None):
     if request.method == 'GET':
-        contactos = InfoContacto.query.all()
+        contactos = InfoContacto.query.order_by(InfoContacto.id.asc()).all()
 
         if not contactos:
             return jsonify({"msg": "empty list"}), 404
