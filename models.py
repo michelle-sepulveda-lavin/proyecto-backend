@@ -16,7 +16,8 @@ class User(db.Model):
             "id": self.id,
             "username": self.username,
             "email": self.email,
-            "rol_id": self.rol_id
+            "rol": { "id": self.role.id, "name": self.role.rol }
+
         }
         
     def save(self):
