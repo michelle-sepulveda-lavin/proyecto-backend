@@ -79,20 +79,41 @@ def register(id=None):
 
         if user:
             return jsonify({"msg": "user already exists"}), 400
+        
+        rolId = Role.query.filter_by(id=rol_id).first()
+        rol = Role.query.filter_by(rol=rol_id).first()
 
-        user = User()
-        user.username = username
-        user.password = generate_password_hash(password)
-        user.rol_id = rol_id
-        user.email = email
-        user.save()
+        if rolId:
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            user.rol_id = rol_id
+            user.email = email
+            user.save()
 
-        expire_in = datetime.timedelta(days=1)
-        data = {
-            "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
-            "user": user.serialize()
-        }
-        return jsonify(data), 200
+            expire_in = datetime.timedelta(days=1)
+            data = {
+                "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+                "user": user.serialize()
+            }
+            return jsonify(data), 200
+        if rol:
+            roleID = rol.id
+
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            user.rol_id = roleID
+            user.email = email
+            user.save()
+
+            expire_in = datetime.timedelta(days=1)
+            data = {
+                "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+                "user": user.serialize()
+            }
+            return jsonify(data), 200
+
     if request.method == 'GET':
         usuarios = User.query.all()
         if not usuarios:
