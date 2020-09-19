@@ -556,6 +556,14 @@ def crearEdificio(id=None):
 
             return jsonify({"msg": "Edificio actualizado correctamente"}), 200
 
+@app.route("/crearedificio/<int:id>", methods=['GET'])
+def get_edificio_by_id(id):
+    edificio = Edificio.query.filter_by(id=id).first()
+    if not edificio:
+        return jsonify({"msg": "Edificio no existente"}), 400
+    else:
+        return jsonify(edificio.serialize()), 200    
+
 
 
 if __name__ == "__main__":
