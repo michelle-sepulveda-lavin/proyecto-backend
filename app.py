@@ -13,6 +13,7 @@ import sendgrid
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import *
 
+
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config.from_object(Development)
@@ -78,20 +79,41 @@ def register(id=None):
 
         if user:
             return jsonify({"msg": "user already exists"}), 400
+        
+        rolId = Role.query.filter_by(id=rol_id).first()
+        rol = Role.query.filter_by(rol=rol_id).first()
 
-        user = User()
-        user.username = username
-        user.password = generate_password_hash(password)
-        user.rol_id = rol_id
-        user.email = email
-        user.save()
+        if rolId:
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            user.rol_id = rol_id
+            user.email = email
+            user.save()
 
-        expire_in = datetime.timedelta(days=1)
-        data = {
-            "access_token": create_access_token(identity=user.id, expires_delta=expire_in),
-            "user": user.serialize()
-        }
-        return jsonify(data), 200
+            expire_in = datetime.timedelta(days=1)
+            data = {
+                "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+                "user": user.serialize()
+            }
+            return jsonify(data), 200
+        if rol:
+            roleID = rol.id
+
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            user.rol_id = roleID
+            user.email = email
+            user.save()
+
+            expire_in = datetime.timedelta(days=1)
+            data = {
+                "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+                "user": user.serialize()
+            }
+            return jsonify(data), 200
+
     if request.method == 'GET':
         usuarios = User.query.all()
         if not usuarios:
@@ -146,18 +168,40 @@ def recuperacion():
             from_email = Email("edificios.felices.cl@gmail.com")
             to_email = To("edificios.felices.cl@gmail.com")
             subject = "Email Recuperacion"
-            expire_in = datetime.timedelta(days=1)
+            expire_in = datetime.timedelta(hours=1)
             data = {
             "access_token": create_access_token(identity=correo.id, expires_delta=expire_in),
             }
-            mensaje = "Para recuperar tu contraseña, usa el siguiente"
-            content = Content("text/plain", data["access_token"]  )
+            mensaje2 = "Para recuperar tu contraseña, usa el siguiente "
+            url = "http://localhost:3000/recuperacion-password/" + data["access_token"]
+            mensaje = f"<html><head></head><body>Para recuperar tu contraseña, usa el siguiente <a href=\"{url}\">Link</a></body></html>"
+            content = Content("text/html", mensaje)
             mail = Mail(from_email, to_email, subject, content)
             response = sg.client.mail.send.post(request_body=mail.get())
             print(response.status_code)
             print(response.body)
             print(response.headers)
             return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 200
+
+@app.route("/reset-password", methods=['POST'])
+@jwt_required
+def resetearPassword():
+    contraseña = request.json.get("password")
+
+    id = get_jwt_identity()
+    user = User.query.get(id)
+    if user:
+
+        user.password = generate_password_hash(contraseña)
+        user.save()
+        expire_in = datetime.timedelta(days=1)
+        data = {
+            "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+            "user": user.serialize()
+        }
+        return jsonify({"msg": "contraseña cambiada exitosamente"}), 200
+    if not user:
+        return jsonify({"msg": "usuario no encontrado"}), 404 
 
 @app.route("/administrador")
 @jwt_required
@@ -299,7 +343,7 @@ def plan_put(id):
 @app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT", "PATCH"])
 def info_Contacto(email=None):
     if request.method == 'GET':
-        contactos = InfoContacto.query.all()
+        contactos = InfoContacto.query.order_by(InfoContacto.id.asc()).all()
 
         if not contactos:
             return jsonify({"msg": "empty list"}), 404
@@ -360,7 +404,14 @@ def info_Contacto(email=None):
         else:
             return jsonify({"msg": "El state debe ser True o False"})
 
-       
+@app.route("/api/info-contacto/<int:id>", methods=['GET'])
+def get_last_contacts(id):
+    contact = InfoContacto.query.order_by(InfoContacto.id.desc()).limit(id).all()
+    contacts = list(map(lambda contacto: contacto.serialize(), contact))
+    if len(contacts) > 0:
+        return jsonify(contacts)
+    else:
+        return jsonify({"msg": "No hay planes, por favor hacer método POST"})
         
 
    
@@ -525,6 +576,14 @@ def crearEdificio(id=None):
             edificio.update()
 
             return jsonify({"msg": "Edificio actualizado correctamente"}), 200
+
+@app.route("/crearedificio/<int:id>", methods=['GET'])
+def get_edificio_by_id(id):
+    edificio = Edificio.query.filter_by(id=id).first()
+    if not edificio:
+        return jsonify({"msg": "Edificio no existente"}), 400
+    else:
+        return jsonify(edificio.serialize()), 200    
 
 
 
