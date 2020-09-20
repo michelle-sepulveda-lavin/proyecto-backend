@@ -59,7 +59,8 @@ def login():
 
 @app.route("/register", methods=['POST', 'GET', 'PUT'])
 @app.route("/register/<int:id>", methods=['DELETE'])
-def register(id=None):
+@app.route("/register/<rol_id>", methods=['GET'])
+def register(id=None, rol_id=None):
     if request.method == 'POST':
         username = request.json.get("username", None)
         password = request.json.get("password", None)
@@ -115,12 +116,21 @@ def register(id=None):
             return jsonify(data), 200
 
     if request.method == 'GET':
-        usuarios = User.query.all()
-        if not usuarios:
-            return jsonify({"msg": "Lista vacia, usar metodo POST"}), 404
-        else:
-            usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
-            return jsonify(usuarios), 200
+        if not rol_id:
+            usuarios = User.query.all()
+            if not usuarios:
+                return jsonify({"msg": "Lista vacia, usar metodo POST"}), 404
+            else:
+                usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
+                return jsonify(usuarios), 200
+        if rol_id:
+            rol_numero = Role.query.filter_by(rol=rol_id).first()
+            role = User.query.filter_by(rol_id=rol_numero.id).all()
+            if not rol_numero:
+                return jsonify({"msg": "No existe rol"}), 404
+            else:
+                role = list(map(lambda rol: rol.serialize(), role))
+                return jsonify(role), 200
 
     if request.method == 'PUT':
 
