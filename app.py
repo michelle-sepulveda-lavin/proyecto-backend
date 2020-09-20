@@ -70,6 +70,8 @@ def register(id=None, rol_id=None):
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
         email = request.json.get("email", None)
+        edificios_id = request.json.get("edificios_rol", None)
+
         if not password:
             return jsonify({"msg": "password is required"}), 400
         if not rol_id:
@@ -92,6 +94,7 @@ def register(id=None, rol_id=None):
             user.username = username
             user.password = generate_password_hash(password)
             user.rol_id = rol_id
+            user.edificios_id = edificios_id
             user.email = email
             user.save()
 
@@ -108,6 +111,7 @@ def register(id=None, rol_id=None):
             user.username = username
             user.password = generate_password_hash(password)
             user.rol_id = roleID
+            user.edificios_id = edificios_id
             user.email = email
             user.save()
 
@@ -119,6 +123,7 @@ def register(id=None, rol_id=None):
             return jsonify(data), 200
 
     if request.method == 'GET':
+
         if not rol_id:
             usuarios = User.query.all()
             if not usuarios:
@@ -126,6 +131,7 @@ def register(id=None, rol_id=None):
             else:
                 usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
                 return jsonify(usuarios), 200
+
         if rol_id:
             rol_numero = Role.query.filter_by(rol=rol_id).first()
             role = User.query.filter_by(rol_id=rol_numero.id).all()
@@ -141,6 +147,7 @@ def register(id=None, rol_id=None):
         password = request.json.get("password", None)
         username = request.json.get("username")
         email = request.json.get("email", None)
+        user.edificios_id = request.json.get("edificios_rol", None)
 
       
         if not password:
@@ -148,6 +155,7 @@ def register(id=None, rol_id=None):
 
         if not email:
             return jsonify({"msg": "email is required"}), 400
+
         user = User.query.filter_by(email=email).first()
         if not user:
             return jsonify({"msg": "el email no existe"}), 400
@@ -156,6 +164,7 @@ def register(id=None, rol_id=None):
   
         user.password = generate_password_hash(password)
         user.username = username
+        user.edificios_id = edificios_id
         user.update()
         return jsonify({"msg": "usuario actualizado correctamente"}), 200
 
@@ -441,9 +450,9 @@ def crearEdificio(id=None):
     if request.method == 'POST':
         nombre_edificio = request.form.get("nombre_edificio")
         direccion = request.form.get("direccion")
-        nombre_administrador = request.form.get("nombre_administrador")
+        """ nombre_administrador = request.form.get("nombre_administrador")"""
         telefono = request.form.get("telefono")
-        correo = request.form.get("correo")
+        correo = request.form.get("correo") 
         numero_pisos = request.form.get("numero_pisos")
         numero_departamentos = request.form.get("numero_departamentos")
         total_bodegas = request.form.get("total_bodegas")
@@ -452,19 +461,17 @@ def crearEdificio(id=None):
         termino_contrato = request.form.get("termino_contrato")
         dia_vencimiento = request.form.get("dia_vencimiento")
         plan_id = request.form.get("plan_id")
-        username_id = request.form.get("username_id")
 
         plan = Plan.query.filter_by(id=plan_id).first()
-        username = User.query.filter_by(id=username_id).first()
 
         if not nombre_edificio:
             return ({"msg": "nombre_edificio es requerido"}), 404
-        if not nombre_administrador:
-            return ({"msg": "nombre_administrador es requerido"}), 404
+        """ if not nombre_administrador:
+            return ({"msg": "nombre_administrador es requerido"}), 404"""
         if not direccion:
             return ({"msg": "direccion es requerido"}), 404
         if not telefono:
-            return ({"msg": "telefono es requerido"}), 404
+            return ({"msg": "telefono es requerido"}), 404 
         if not correo:
             return ({"msg": "correo es requerido"}), 404
         if not numero_pisos:
@@ -487,10 +494,10 @@ def crearEdificio(id=None):
             return ({"msg": "plan_id es requerido"}), 404
         if not plan:
             return jsonify({"msg": "plan id incorrecto"}), 400 
-        if not username_id:
+        """ if not username_id:
             return ({"msg": "username_id es requerido"}), 404
         if not username:
-            return jsonify({"msg": "usuario id incorrecto"}), 400
+            return jsonify({"msg": "usuario id incorrecto"}), 400 """
 
         archivoCSV = request.files['archivoCSV']
 
@@ -507,10 +514,10 @@ def crearEdificio(id=None):
         
         edificio = Edificio()
         edificio.nombre_edificio = nombre_edificio
-        edificio.nombre_administrador = nombre_administrador
+        """ edificio.nombre_administrador = nombre_administrador """
         edificio.direccion = direccion
         edificio.telefono = telefono
-        edificio.correo = correo
+        edificio.correo = correo 
         edificio.numero_pisos = int(numero_pisos)
         edificio.numero_departamentos = int(numero_departamentos)
         edificio.total_bodegas = int(total_bodegas)
@@ -519,7 +526,7 @@ def crearEdificio(id=None):
         edificio.termino_contrato = termino_contrato
         edificio.dia_vencimiento = dia_vencimiento
         edificio.plan_id = int(plan_id)
-        edificio.username_id = int(username_id)
+        """ edificio.username_id = int(username_id) """
         edificio.archivoCSV = filename_archivoCSV
         edificio.save()
 
@@ -543,7 +550,7 @@ def crearEdificio(id=None):
         else:
             nombre_edificio = request.json.get("nombre_edificio")
             direccion = request.json.get("direccion")
-            nombre_administrador = request.json.get("nombre_administrador")
+            """ nombre_administrador = request.json.get("nombre_administrador")"""
             telefono = request.json.get("telefono")
             correo = request.json.get("correo")
             numero_pisos = request.json.get("numero_pisos")
@@ -554,12 +561,12 @@ def crearEdificio(id=None):
             termino_contrato = request.json.get("termino_contrato")
             dia_vencimiento = request.json.get("dia_vencimiento")
             plan_id = request.json.get("plan_id")
-            username_id = request.json.get("username_id")
+            """ username_id = request.json.get("username_id") """
 
             if not nombre_edificio:
                 return ({"msg": "nombre_edificio es requerido"})
-            if not nombre_administrador:
-                return ({"msg": "nombre_administrador es requerido"})
+            """ if not nombre_administrador:
+                return ({"msg": "nombre_administrador es requerido"}) """
             if not direccion:
                 return ({"msg": "direccion es requerido"})
             if not telefono:
@@ -582,11 +589,11 @@ def crearEdificio(id=None):
                 return ({"msg": "dia_vencimiento es requerido"})
             if not plan_id:
                 return ({"msg": "plan_id es requerido"})
-            if not username_id:
-                return ({"msg": "username_id es requerido"})
+            """ if not username_id:
+                return ({"msg": "username_id es requerido"}) """
         
             edificio.nombre_edificio = nombre_edificio
-            edificio.nombre_administrador = nombre_administrador
+            """ edificio.nombre_administrador = nombre_administrador """
             edificio.direccion = direccion
             edificio.telefono = telefono
             edificio.correo = correo
@@ -598,7 +605,7 @@ def crearEdificio(id=None):
             edificio.termino_contrato = termino_contrato
             edificio.dia_vencimiento = dia_vencimiento
             edificio.plan_id = int(plan_id)
-            edificio.username_id = int(username_id)
+            """ edificio.username_id = int(username_id) """
             edificio.update()
 
             return jsonify({"msg": "Edificio actualizado correctamente"}), 200
