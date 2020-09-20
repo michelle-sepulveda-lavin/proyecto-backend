@@ -133,6 +133,7 @@ class Edificio(db.Model):
     dia_vencimiento = db.Column(db.String(120), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('planes.id'), nullable=False)
     username_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    archivoCSV = db.Column(db.String(100), default=None)
 
     def serialize(self):
         return{
@@ -150,7 +151,8 @@ class Edificio(db.Model):
             "termino_contrato": self.termino_contrato,
             "dia_vencimiento": self.dia_vencimiento,
             "plan_id": self.plan_id,
-            "username_id": self.username_id
+            "username_id": self.username_id,
+            "archivoCSVv": self.archivoCSV
         }
     
     def save(self):

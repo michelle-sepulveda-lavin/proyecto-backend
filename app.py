@@ -4,6 +4,7 @@ from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
 from models import db, User, Role, Plan, Edificio, InfoContacto
@@ -12,7 +13,10 @@ import os
 import sendgrid
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import *
+from libs.functions import allowed_file
 
+ALLOWED_EXTENSIONS_IMAGES = {'png', 'jpg', 'jpeg'}
+ALLOWED_EXTENSIONS_FILES = {'pdf', 'csv'}
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -41,7 +45,7 @@ def login():
         return jsonify({"msg": "El usuario es requerido"}), 400
     if not password:
         return jsonify({"msg": "La contraseña es requerida"}), 400
-    
+
     user = User.query.filter_by(username=username).first()
 
     if not user:
@@ -66,16 +70,15 @@ def register(id=None, rol_id=None):
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
         email = request.json.get("email", None)
-
-        if not username:
-            return jsonify({"msg": "username is required"}), 400
         if not password:
             return jsonify({"msg": "password is required"}), 400
         if not rol_id:
             return jsonify({"msg": "rol_id is required"})
         if not email:
             return jsonify({"msg": "email is required"})
-        
+        if not username:
+            return jsonify({"msg": "username is required"}), 400
+
         user = User.query.filter_by(username=username).first()
 
         if user:
@@ -436,20 +439,20 @@ def crearEdificio(id=None):
             edificios = list(map(lambda edificio: edificio.serialize(), edificios))
             return jsonify(edificios), 200
     if request.method == 'POST':
-        nombre_edificio = request.json.get("nombre_edificio")
-        direccion = request.json.get("direccion")
-        nombre_administrador = request.json.get("nombre_administrador")
-        telefono = request.json.get("telefono")
-        correo = request.json.get("correo")
-        numero_pisos = request.json.get("numero_pisos")
-        numero_departamentos = request.json.get("numero_departamentos")
-        total_bodegas = request.json.get("total_bodegas")
-        total_estacionamientos = request.json.get("total_estacionamientos")
-        inicio_contratacion = request.json.get("inicio_contratacion")
-        termino_contrato = request.json.get("termino_contrato")
-        dia_vencimiento = request.json.get("dia_vencimiento")
-        plan_id = request.json.get("plan_id")
-        username_id = request.json.get("username_id")
+        nombre_edificio = request.form.get("nombre_edificio")
+        direccion = request.form.get("direccion")
+        nombre_administrador = request.form.get("nombre_administrador")
+        telefono = request.form.get("telefono")
+        correo = request.form.get("correo")
+        numero_pisos = request.form.get("numero_pisos")
+        numero_departamentos = request.form.get("numero_departamentos")
+        total_bodegas = request.form.get("total_bodegas")
+        total_estacionamientos = request.form.get("total_estacionamientos")
+        inicio_contratacion = request.form.get("inicio_contratacion")
+        termino_contrato = request.form.get("termino_contrato")
+        dia_vencimiento = request.form.get("dia_vencimiento")
+        plan_id = request.form.get("plan_id")
+        username_id = request.form.get("username_id")
 
         plan = Plan.query.filter_by(id=plan_id).first()
         username = User.query.filter_by(id=username_id).first()
@@ -489,6 +492,18 @@ def crearEdificio(id=None):
         if not username:
             return jsonify({"msg": "usuario id incorrecto"}), 400
 
+        archivoCSV = request.files['archivoCSV']
+
+        if 'archivoCSV' not in request.files:
+            return jsonify({"msg": {"archivoCSV":"archivoCSV is required"}}), 400
+        if archivoCSV.filename == '':
+            return jsonify({"msg": {"archivoCSV":"archivoCSV is required"}}), 400
+        
+        filename_archivoCSV = "sin-archivoCSV.csv"
+        if archivoCSV and allowed_file(archivoCSV.filename, ALLOWED_EXTENSIONS_FILES):
+            filename_archivoCSV = secure_filename(archivoCSV.filename)
+            archivoCSV.save(os.path.join(app.config['UPLOAD_FOLDER']+"/csv", filename_archivoCSV))
+
         
         edificio = Edificio()
         edificio.nombre_edificio = nombre_edificio
@@ -505,6 +520,7 @@ def crearEdificio(id=None):
         edificio.dia_vencimiento = dia_vencimiento
         edificio.plan_id = int(plan_id)
         edificio.username_id = int(username_id)
+        edificio.archivoCSV = filename_archivoCSV
         edificio.save()
 
         return jsonify({"msg": "Edificio creado"}), 200
