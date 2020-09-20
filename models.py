@@ -9,7 +9,7 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
-    edificios = db.relationship("Edificio", backref="user")
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
 
     def serialize(self):
         return{
@@ -19,8 +19,24 @@ class User(db.Model):
             "rol": {
                 "id": self.role.id,
                 "name": self.role.rol
-            } 
+                }
         }
+
+
+    def serialize_con_edificio(self):
+        return{
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "rol": {
+                "id": self.role.id,
+                "name": self.role.rol
+                },
+            "edificio": {
+                "id": self.edificio.id,
+                "name": self.edificio.nombre_edificio
+            } 
+        }       
         
     def save(self):
         db.session.add(self)
@@ -121,7 +137,7 @@ class Edificio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre_edificio = db.Column(db.String(120), nullable=False)
     direccion = db.Column(db.String(120), nullable=False)
-    nombre_administrador = db.Column(db.String(120), nullable=False)
+    """nombre_administrador = db.Column(db.String(120), nullable=True)"""
     telefono = db.Column(db.String(12), nullable=False)
     correo = db.Column(db.String(120), nullable=False)
     numero_pisos = db.Column(db.Integer, nullable=False)
@@ -132,16 +148,16 @@ class Edificio(db.Model):
     termino_contrato = db.Column(db.String(120), nullable=False)
     dia_vencimiento = db.Column(db.String(120), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('planes.id'), nullable=False)
-    username_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    archivoCSV = db.Column(db.String(100), default=None)
+    users = db.relationship("User", backref="edificio")
 
     def serialize(self):
         return{
             "id": self.id,
             "nombre_edificio": self.nombre_edificio,
             "direccion": self.direccion,
-            "nombre_administrador": self.nombre_administrador,
             "telefono": self.telefono,
-            "correo": self.correo,
+            "correo": self.correo, 
             "numero_pisos": self.numero_pisos,
             "numero_departamentos": self.numero_departamentos,
             "total_bodegas": self.total_bodegas,
@@ -150,7 +166,7 @@ class Edificio(db.Model):
             "termino_contrato": self.termino_contrato,
             "dia_vencimiento": self.dia_vencimiento,
             "plan_id": self.plan_id,
-            "username_id": self.username_id
+            "archivoCSVv": self.archivoCSV
         }
     
     def save(self):
