@@ -101,7 +101,7 @@ def register(id=None, rol_id=None):
             expire_in = datetime.timedelta(days=1)
             data = {
                 "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
-                "user": user.serialize()
+                "user": user.serialize_con_edificio()
             }
             return jsonify(data), 200
         if rol:
@@ -616,7 +616,54 @@ def get_edificio_by_id(id):
     if not edificio:
         return jsonify({"msg": "Edificio no existente"}), 400
     else:
-        return jsonify(edificio.serialize()), 200    
+        return jsonify(edificio.serialize()), 200
+        
+@app.route("/conserjes/<int:id>", methods=['DELETE', 'PUT'])
+@app.route("/conserjes", methods=['POST', 'GET'])
+def crearConserje(id=None):
+    if request.method == 'GET':
+        conserjes = Conserje.query.all()
+        if not conserjes:
+            return jsonify({"msg": "No hay conserjes, usar metodo POST"}), 200
+        else:
+            conserjes = list(map(lambda conserje: conserje.serialize(), conserjes))
+            return jsonify(conserjes), 200
+
+    if request.method == 'POST':
+        
+        nombre = request.form.get("nombre")
+        telefono = request.form.get("telefono")
+        turno = request.form.get("turno")
+        edificio_id = request.form.get("edificio_id")
+        usuario_id = request.form.get("usuario_id")
+
+
+        plan = Plan.query.filter_by(id=plan_id).first()
+
+        if not nombre:
+            return ({"msg": "nombre es requerido"}), 404
+        if not telefono:
+            return ({"msg": "telefono es requerido"}), 404
+        if not turno:
+            return ({"msg": "turno es requerido"}), 404 
+        if not edificio_id:
+            return ({"msg": "edificio_id es requerido"}), 404
+        if not usuario_id:
+            return ({"msg": "usuario_id es requerido"}), 404
+ 
+        avatar = request.files['avatar_conserje']
+
+        if avatar.filename == '':
+            flash('No selected file')
+
+"""         if archivoCSV.filename == '':
+            return jsonify({"msg": {"avatar_conserje":"avatar_conserje is required"}}), 400 """
+        
+        if avatar and allowed_file(avatar.filename, ALLOWED_EXTENSIONS_IMAGES):
+            filename_avatar = secure_filename(avatar.filename)
+            avatar.save(os.path.join(app.config['UPLOAD_FOLDER']+"/img", filename_avatar))
+
+
 
 
 
