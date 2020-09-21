@@ -19,7 +19,8 @@ class User(db.Model):
             "rol": {
                 "id": self.role.id,
                 "name": self.role.rol
-                }
+                },
+            "edificio": self.edificio_id
         }
 
 
@@ -32,10 +33,7 @@ class User(db.Model):
                 "id": self.role.id,
                 "name": self.role.rol
                 },
-            "edificio": {
-                "id": self.edificio.id,
-                "name": self.edificio.nombre_edificio
-            } 
+            "edificio": self.edificio_id
         }       
         
     def save(self):
@@ -150,6 +148,7 @@ class Edificio(db.Model):
     plan_id = db.Column(db.Integer, db.ForeignKey('planes.id'), nullable=False)
     archivoCSV = db.Column(db.String(100), default=None)
     users = db.relationship("User", backref="edificio")
+    departamentos = db.relationship("Departamento", backref="edificio")
 
     def serialize(self):
         return{
@@ -180,4 +179,34 @@ class Edificio(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-        
+class Departamento(db.Model):
+    __tablename__ = "departamentos"
+    id = db.Column(db.Integer, primary_key=True)
+    modelo = db.Column(db.String(120), nullable=False)
+    total = db.Column(db.Integer, nullable=False)
+    interior = db.Column(db.Integer, nullable=False)
+    terraza = db.Column(db.Integer, nullable=False)
+    cantidad_total = db.Column(db.Integer, nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "modelo": self.modelo,
+            "total": self.total,
+            "interior": self.interior,
+            "terraza": self.terraza, 
+            "cantidad_total": self.cantidad_total,
+            "edificio_id": self.edificio_id,
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()        
