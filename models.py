@@ -10,7 +10,7 @@ class User(db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
-    conserjes = db.relationship("Conserje", backref="usuario")
+    conserje = db.relationship("Conserje", backref="users")
 
     def serialize(self):
         return{
@@ -20,7 +20,8 @@ class User(db.Model):
             "rol": {
                 "id": self.role.id,
                 "name": self.role.rol
-                }
+                },
+            "edificio": self.edificio_id
         }
 
 
@@ -33,10 +34,7 @@ class User(db.Model):
                 "id": self.role.id,
                 "name": self.role.rol
                 },
-            "edificio": {
-                "id": self.edificio.id,
-                "name": self.edificio.nombre_edificio
-            } 
+            "edificio": self.edificio_id
         }       
         
     def save(self):
@@ -154,6 +152,7 @@ class Edificio(db.Model):
     archivoCSV = db.Column(db.String(100), default=None)
     users = db.relationship("User", backref="edificio")
     conserjes = db.relationship("Conserje", backref="edificio")
+    departamentos = db.relationship("Departamento", backref="edificio")
 
     def serialize(self):
         return{
@@ -190,13 +189,16 @@ class Conserje(db.Model):
     nombre = db.Column(db.String(120), nullable=False)
     telefono = db.Column(db.String(120), nullable=False)
     turno = db.Column(db.String(120), nullable=False)
-    avatar = db.Column(db.String(100), default=None, nullable=True)
+    avatar = db.Column(db.String(100), nullable=True, default="sin-imagen.png")
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
-    usuario_id = db.Column(db.Integer, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    state = db.Column(db.Boolean, nullable=True, default=False)
+
 
 
     def serialize(self):
         return {
+            "id": self.id,
             "avatar": self.avatar,
             "nombre": self.nombre,
             "telefono": self.telefono,
@@ -204,11 +206,47 @@ class Conserje(db.Model):
             "edificio": {
                 "id": self.edificio.id,
                 },
-            "rol": {
-                "id": self.role.id
+            "estado": self.state,
+            "usuario": {
+                "username": self.users.username,
+                "email": self.users.email,
+                "usuario_id": self.users.rol_id
             }
         }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()        
+
         
+class Departamento(db.Model):
+    __tablename__ = "departamentos"
+    id = db.Column(db.Integer, primary_key=True)
+    modelo = db.Column(db.String(120), nullable=False)
+    total = db.Column(db.Integer, nullable=False)
+    interior = db.Column(db.Integer, nullable=False)
+    terraza = db.Column(db.Integer, nullable=False)
+    cantidad_total = db.Column(db.Integer, nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "modelo": self.modelo,
+            "total": self.total,
+            "interior": self.interior,
+            "terraza": self.terraza, 
+            "cantidad_total": self.cantidad_total,
+            "edificio_id": self.edificio_id,
+        }
+    
     def save(self):
         db.session.add(self)
         db.session.commit()
