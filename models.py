@@ -10,6 +10,7 @@ class User(db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+    conserje = db.relationship("Conserje", backref="users")
 
     def serialize(self):
         return{
@@ -81,6 +82,8 @@ class Role(db.Model):
     rol = db.Column(db.String(120), nullable=False, unique=True)
     users = db.relationship("User", backref="role")
 
+
+
     def serialize(self):
         return{
             "id": self.id,
@@ -148,6 +151,7 @@ class Edificio(db.Model):
     plan_id = db.Column(db.Integer, db.ForeignKey('planes.id'), nullable=False)
     archivoCSV = db.Column(db.String(100), default=None)
     users = db.relationship("User", backref="edificio")
+    conserjes = db.relationship("Conserje", backref="edificio")
     departamentos = db.relationship("Departamento", backref="edificio")
 
     def serialize(self):
@@ -179,6 +183,49 @@ class Edificio(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+class Conserje(db.Model):
+    __tablename__ = "conserjes"
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(120), nullable=False)
+    telefono = db.Column(db.String(120), nullable=False)
+    turno = db.Column(db.String(120), nullable=False)
+    avatar = db.Column(db.String(100), nullable=True, default="sin-imagen.png")
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    state = db.Column(db.Boolean, nullable=True, default=False)
+
+
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "avatar": self.avatar,
+            "nombre": self.nombre,
+            "telefono": self.telefono,
+            "turno": self.turno,
+            "edificio": {
+                "id": self.edificio.id,
+                },
+            "estado": self.state,
+            "usuario": {
+                "username": self.users.username,
+                "email": self.users.email,
+                "usuario_id": self.users.rol_id
+            }
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()        
+
+        
 class Departamento(db.Model):
     __tablename__ = "departamentos"
     id = db.Column(db.Integer, primary_key=True)
@@ -206,7 +253,7 @@ class Departamento(db.Model):
 
     def update(self):
         db.session.commit()
-
+    
     def delete(self):
         db.session.delete(self)
-        db.session.commit()        
+        db.session.commit()
