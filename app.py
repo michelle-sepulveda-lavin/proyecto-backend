@@ -1,5 +1,5 @@
 import datetime
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_from_directory
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from flask_cors import CORS
@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje
 import json
 import os
 import sendgrid
@@ -103,9 +103,9 @@ def register(id=None, rol_id=None):
             expire_in = datetime.timedelta(days=1)
             data = {
                 "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
-                "user": user.serialize()
+                "user": user.serialize_con_edificio()
             }
-            return jsonify(data), 200
+        
         if rol:
             roleID = rol.id
 
@@ -621,7 +621,155 @@ def get_edificio_by_id(id):
     if not edificio:
         return jsonify({"msg": "Edificio no existente"}), 400
     else:
-        return jsonify(edificio.serialize()), 200    
+        return jsonify(edificio.serialize()), 200
+        
+@app.route("/conserjes/<int:id>", methods=['DELETE', 'PATCH', 'GET'])
+@app.route("/conserjes", methods=['POST', 'GET'])
+def crearConserje(id=None):
+
+    if request.method == 'GET':
+        if id:
+            conserje = Conserje.query.filter_by(id=id).first()
+            if not conserje:
+                return jsonify({"msg": "Conserje no existe"})
+            return jsonify(conserje.serialize())
+
+        conserjes = Conserje.query.all()
+        if not conserjes:
+            return jsonify({"msg": "No hay conserjes, usar metodo POST"}), 200
+        else:
+            conserjes = list(map(lambda conserje: conserje.serialize(), conserjes))
+            return jsonify(conserjes), 200
+
+    if request.method == 'POST':
+
+        username = request.form.get("username", None)
+        password = request.form.get("password", None)
+        rol_id = request.form.get("rol_id", None)
+        email = request.form.get("email", None)
+        nombre = request.form.get("nombre", None)
+        telefono = request.form.get("telefono", None)
+        turno = request.form.get("turno", None)
+        edificio_id = request.form.get("edificios_id", None)
+        avatar = request.files.get('avatar')
+        if not username:
+            return ({"msg": "Nombre de usuario es requerido"}), 404
+        if not password:
+            return ({"msg": "Contraseña es requerida"}), 404
+        if not rol_id:
+            return ({"msg": "rol_id es requerido"}), 404 
+        if not email:
+            return ({"msg": "El correo es requerido"}), 404
+
+        
+        if not nombre:
+            return ({"msg": "nombre es requerido"}), 404
+        if not telefono:
+            return ({"msg": "telefono es requerido"}), 404
+        if not turno:
+            return ({"msg": "turno es requerido"}), 404 
+        if not edificio_id:
+            return ({"msg": "edificio_id es requerido"}), 404
+
+
+        user = User.query.filter_by(username=username).first()
+        user_mail = User.query.filter_by(email=email).first()
+        conserje_nombre = Conserje.query.filter_by(nombre=nombre).first()
+
+        if conserje_nombre:
+            return jsonify({"msg": "Conserje ya existe"}), 400
+
+        if user_mail:
+            return jsonify({"msg": "Correo ya registrado"}), 400
+        if user:
+            return jsonify({"msg": "Nombre usuario ya registrado"}), 400
+        
+        rolId = Role.query.filter_by(id=rol_id).first()
+
+        if rolId:
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            user.rol_id = rol_id
+            user.edificio_id = edificio_id
+            user.email = email
+            user.save()
+
+        new_User = User.query.filter_by(email=email).first()
+        
+        if new_User:
+            usuario_id = new_User.id
+
+        
+        filename = "sin-imagen.png"
+        if avatar and allowed_file(avatar.filename, ALLOWED_EXTENSIONS_IMAGES):
+            filename = secure_filename(avatar.filename)
+            avatar.save(os.path.join(app.config['UPLOAD_FOLDER']+"/avatares", filename))
+        
+        conserje = Conserje()
+        conserje.nombre = nombre
+        conserje.telefono = telefono
+        conserje.turno = turno
+        conserje.edificio_id = edificio_id
+        conserje.usuario_id = usuario_id
+        conserje.avatar = filename
+        conserje.save()
+
+        return jsonify({"msg": "Conserje creado"}), 200
+
+    if request.method == 'DELETE':
+        conserje = Conserje.query.filter_by(id=id).first()
+        if not conserje:
+            return jsonify({"msg": "Conserje no existe"})
+        conserje.delete()
+        return jsonify({"msg": "conserje borrado"})
+
+
+    if request.method == 'PATCH':
+        conserje = Conserje.query.filter_by(id=id).first()
+
+        nombre = request.form.get("nombre", None)
+        telefono = request.form.get("telefono", None)
+        turno = request.form.get("turno", None)
+        avatar = request.files.get('avatar')
+        estado_conserje = request.json.get("estado_conserje", None)
+        
+        if not conserje:
+            return jsonify({"msg": "No existe ese conserje"})
+
+        if type(estado_conserje) == bool:
+            conserje.state = estado_conserje
+            conserje.update()
+        
+        if nombre:
+            conserje.nombre = nombre
+            conserje.update()
+        if telefono:
+            conserje.telefono = telefono
+            conserje.update()
+        if turno:
+            conserje.turno = turno
+            conserje.update()
+        if avatar:
+            filename = "sin-imagen.png"
+            if avatar and allowed_file(avatar.filename, ALLOWED_EXTENSIONS_IMAGES):
+                filename = secure_filename(avatar.filename)
+                avatar.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatares", filename))
+                conserje.avatar = filename
+                conserje.update()
+        
+        return jsonify({"Msg": "Conserje Actualizado"})
+ 
+        
+@app.route("/conserjes/edificio/<int:id>", methods=['POST', 'GET', 'DELETE', 'PUT'])
+def conserjes_edificio(id):
+    if request.method == 'GET':
+        conserjes = Conserje.query.filter_by(edificio_id=id)
+        if not conserjes:
+            return jsonify({"msg": "No hay conserjes en este edificio"})
+        conserje = list(map(lambda cons: cons.serialize(), conserjes))
+        return jsonify(conserje)
+        
 
 @app.route("/info-departamento/<id>", methods=['POST', 'GET', 'DELETE'])
 def departamento_by_id(id):
@@ -699,6 +847,9 @@ def departamentoUsuario(id=None):
                 return jsonify(departamento.serialize()), 200
 
         
+@app.route("/avatares/<avatar>")
+def get_avatar(avatar):
+    return send_from_directory(app.config['UPLOAD_FOLDER']+"/avatares", avatar)
 
 
 
