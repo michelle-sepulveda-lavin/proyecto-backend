@@ -7,13 +7,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento
 import json
 import os
 import sendgrid
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import *
 from libs.functions import allowed_file
+from io import TextIOWrapper
+import csv
 
 ALLOWED_EXTENSIONS_IMAGES = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_FILES = {'pdf', 'csv'}
@@ -70,7 +72,7 @@ def register(id=None, rol_id=None):
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
         email = request.json.get("email", None)
-        edificios_id = request.json.get("edificios_rol", None)
+        edificios_id = request.json.get("edificios_id", None)
 
         if not password:
             return jsonify({"msg": "password is required"}), 400
@@ -138,33 +140,28 @@ def register(id=None, rol_id=None):
             if not rol_numero:
                 return jsonify({"msg": "No existe rol"}), 404
             else:
-                role = list(map(lambda rol: rol.serialize(), role))
+                role = list(map(lambda rol: rol.serialize_con_edificio(), role))
                 return jsonify(role), 200
 
     if request.method == 'PUT':
 
-
         password = request.json.get("password", None)
         username = request.json.get("username")
         email = request.json.get("email", None)
-        user.edificios_id = request.json.get("edificios_rol", None)
+        edificio_id = request.json.get("edificio_id", None)
 
       
-        if not password:
-            return jsonify({"msg": "password is required"}), 400
-
+        """ if not password:
+            return jsonify({"msg": "password is required"}), 400 """
+        """ if not username:
+            return jsonify({"msg": "username is required"}), 400
+        """
         if not email:
-            return jsonify({"msg": "email is required"}), 400
+            return jsonify({"msg": "email is required"}), 400 
 
         user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({"msg": "el email no existe"}), 400
         
-        
-  
-        user.password = generate_password_hash(password)
-        user.username = username
-        user.edificios_id = edificios_id
+        user.edificio_id = edificio_id
         user.update()
         return jsonify({"msg": "usuario actualizado correctamente"}), 200
 
@@ -511,6 +508,14 @@ def crearEdificio(id=None):
             filename_archivoCSV = secure_filename(archivoCSV.filename)
             archivoCSV.save(os.path.join(app.config['UPLOAD_FOLDER']+"/csv", filename_archivoCSV))
 
+        """ archivoCSV = request.files['archivoCSV']
+        csv_file = TextIOWrapper(archivoCSV)
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        
+        for row in csv_reader:
+            departamento = Departamento(modelo=row[0], total=int(row[1]), interior=int(row[2]), terraza=int(row[3]), cantidad_total=int(row[4]))
+            departamento.save()
+        """
         
         edificio = Edificio()
         edificio.nombre_edificio = nombre_edificio
