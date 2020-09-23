@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, Conserje
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje
 import json
 import os
 import sendgrid
@@ -72,7 +72,7 @@ def register(id=None, rol_id=None):
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
         email = request.json.get("email", None)
-        edificios_id = request.json.get("edificios_id", None)
+        edificio_id = request.json.get("edificio_id", None)
 
         if not password:
             return jsonify({"msg": "password is required"}), 400
@@ -96,16 +96,16 @@ def register(id=None, rol_id=None):
             user.username = username
             user.password = generate_password_hash(password)
             user.rol_id = rol_id
-            user.edificios_id = edificios_id
+            user.edificio_id = edificio_id
             user.email = email
             user.save()
 
             expire_in = datetime.timedelta(days=1)
             data = {
                 "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
-                "user": user.serialize_con_edificio()
+                "user": user.serialize()
             }
-        
+            return jsonify(data), 200
         if rol:
             roleID = rol.id
 
@@ -113,7 +113,7 @@ def register(id=None, rol_id=None):
             user.username = username
             user.password = generate_password_hash(password)
             user.rol_id = roleID
-            user.edificios_id = edificios_id
+            user.edificio_id = edificio_id
             user.email = email
             user.save()
 
@@ -140,7 +140,7 @@ def register(id=None, rol_id=None):
             if not rol_numero:
                 return jsonify({"msg": "No existe rol"}), 404
             else:
-                role = list(map(lambda rol: rol.serialize_con_edificio(), role))
+                role = list(map(lambda rol: rol.serialize(), role))
                 return jsonify(role), 200
 
     if request.method == 'PUT':
@@ -779,10 +779,193 @@ def conserjes_estado(id):
 
     return jsonify({"Msg": "Estado conserje Actualizado"})
 
+@app.route("/info-departamento/<id>", methods=['POST', 'GET', 'DELETE'])
+def departamento_by_id(id):
+    if request.method == 'GET':
+        departamentos = Departamento.query.filter_by(edificio_id=id).all()
+        
+        if not departamentos:
+            return jsonify({"msg": "No hay departamentos, usar metodo POST"}), 404
+        if departamentos:
+            departamentos = list(map(lambda depto: depto.serialize(), departamentos))
+            return jsonify((departamentos))
+
+    if request.method == 'POST':
+        edificio = Edificio.query.filter_by(id=id).first()
+        if not edificio:
+            return jsonify({"msg": "El edificio no existe"}), 404
+        else:
+            modelo = request.json.get("modelo")
+            total = request.json.get("total")
+            interior = request.json.get("interior")
+            terraza = request.json.get("terraza")
+            cantidad_total = request.json.get("cantidad_total")
+            edificio_id = id
+
+            if not modelo:
+               return jsonify({"msg": "Modelo es requerido"}), 400
+            if not total:
+               return jsonify({"msg": "Superficie total es requerido"}), 400 
+            if not interior:
+               return jsonify({"msg": "Interior es requerido"}), 400 
+            if not terraza:
+               return jsonify({"msg": "Terraza es requerido"}), 400 
+            if not cantidad_total:
+               return jsonify({"msg": "Cantidad total de departamentos es requerido"}), 400
+
+            departamento = Departamento()
+            departamento.modelo = modelo
+            departamento.total = total
+            departamento.interior = interior
+            departamento.terraza = terraza
+            departamento.cantidad_total = cantidad_total
+            departamento.edificio_id = id 
+            
+            departamento.save()
+
+            return jsonify({"msg": "departamento creado exitosamente"}), 200
+    
+    if request.method == 'DELETE':
+        departamento = Departamento.query.filter_by(id=id).first()
+
+        if not departamento:
+            return({"msg": "No existe el modelo de departamento señalado"}), 404
+        if departamento:
+            departamento.delete()
+            return jsonify({"msg": "El modelo de departamento ha sido eliminado exitosamente"}), 200
+            
+@app.route("/departamentoUsuario", methods=['GET'])
+@app.route("/departamentoUsuario/<id>", methods=['GET'])
+def departamentoUsuario(id=None):
+    if request.method == 'GET':
+        if not id:
+            departamentos = DepartamentoUsuario.query.all()
+
+            if not departamentos:
+                return jsonify({"msg": "No hay departamentos, usar metodo POST"}), 404
+            else:
+                departamentos = list(map(lambda dpto: dpto.serialize(), departamentos))
+                return jsonify(departamentos), 200
+        if id:
+            departamento = DepartamentoUsuario.query.filter_by(id=id).first()
+            
+            if not departamento:
+                return jsonify({"msg": "Departamento no existe"}), 404
+            else:
+                return jsonify(departamento.serialize()), 200
+
+        
 @app.route("/avatares/<avatar>")
 def get_avatar(avatar):
     return send_from_directory(app.config['UPLOAD_FOLDER']+"/avatares", avatar)
 
+
+
+@app.route("/departamentoUsuarioEdificio/<id>", methods=['GET', 'POST', 'DELETE'])
+def departamentoUsuario_by_Edificio(id=None):
+    if request.method == 'GET':
+        departamentos = DepartamentoUsuario.query.filter_by(edificio_id=id).all()
+            
+        if not departamentos:
+            return jsonify({"msg": "Departamentos no existen"}), 404
+        else:
+            departamentos = list(map(lambda dpto: dpto.serialize(), departamentos))
+            return jsonify(departamentos), 200
+    
+    if request.method == 'POST':
+        edificio = Edificio.query.filter_by(id=id).first()
+
+        if not edificio:
+            return jsonify({"msg": "Edificio no existe"}), 404
+        else:
+            numero_departamento = request.json.get("numero_departamento")
+            estado = request.json.get("estado")  
+            residente = request.json.get("residente")  
+            bodega = request.json.get("bodega")  
+            estacionamiento = request.json.get("estacionamiento")  
+            piso = request.json.get("piso")  
+            modelo_id = request.json.get("modelo_id")   
+
+            if not numero_departamento:
+                return jsonify("msg", "numero_departamento es requerido"), 400
+            if not estado:
+                return jsonify("msg", "estado es requerido"), 400
+            """ if not residente:
+            return jsonify("msg", "residente es requerido"), 400  """
+            """ if not bodega:
+            return jsonify("msg", "bodega es requerido"), 400  
+            if not estacionamiento:
+            return jsonify("msg", "estacionamiento es requerido"), 400 """
+            if not piso:
+                return jsonify("msg", "piso es requerido"), 400
+            if not modelo_id:
+                return jsonify("msg", "modelo_id es requerido"), 400    
+
+            modelo = Departamento.query.filter_by(modelo=modelo_id).first()
+
+
+            departamento = DepartamentoUsuario()
+            departamento.numero_departamento = numero_departamento
+            departamento.estado = estado
+            departamento.residente = residente
+            departamento.bodega = bodega
+            departamento.estacionamiento = estacionamiento
+            departamento.piso = piso
+            departamento.edificio_id = id
+            departamento.modelo_id = modelo.id
+            departamento.save()
+
+            return jsonify({"msg" : "departamento de usuario creado exitosamente"}), 200
+    
+    if request.method == 'DELETE':
+        departamento = DepartamentoUsuario.query.filter_by(id=id).first()
+
+        if not departamento:
+            return jsonify({"msg": "Departamento no existe"}), 404
+        if departamento:
+            departamento.delete()
+            return jsonify({"msg": "El departamento ha sido eliminado exitosamente"}), 200
+
+@app.route("/usuarios-edificio/<id>", methods=['GET'])
+def usuarios_by_Edificio(id):
+    if request.method == 'GET':
+        usuarios = User.query.filter_by(edificio_id=int(id)).all()
+        if not usuarios:
+            return jsonify({"msg": "No existen usuarios en el edificio"}), 404
+        if usuarios:
+            usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
+            return jsonify(usuarios)
+
+@app.route("/add-residente/<id>", methods=['PUT'])
+def add_user_to_building(id):
+    departamento = DepartamentoUsuario.query.filter_by(id=id).first()
+
+    if not departamento:
+        return jsonify({"msg": "Departamento de usuario no encontrado"}), 404
+    if departamento:
+        residente = request.json.get("residente")
+        estado = request.json.get("estado")
+
+        if not residente:
+            return jsonify({"msg": "residente es obligatorio"}), 404
+        else:
+            residenteID = User.query.filter_by(id=residente).first()
+            
+            if not residenteID:
+                residenteName = User.query.filter_by(username=residente).first()
+                
+                if not residenteName:
+                    return jsonify({"msg": "el usuario no existe"}), 404
+                else:
+                    departamento.residente = residenteName.id
+                    departamento.estado = estado
+                    departamento.update()
+                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            else:
+                departamento.residente = residenteID.id
+                departamento.estado = estado
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
 
 if __name__ == "__main__":
     manager.run()
