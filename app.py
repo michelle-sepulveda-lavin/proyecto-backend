@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto
+from models import db, User, Role, Plan, Edificio, InfoContacto, Boletin
 import json
 import os
 import sendgrid
@@ -616,8 +616,36 @@ def get_edificio_by_id(id):
     if not edificio:
         return jsonify({"msg": "Edificio no existente"}), 400
     else:
-        return jsonify(edificio.serialize()), 200    
+        return jsonify(edificio.serialize()), 200   
 
+
+
+
+@app.route("/boletin", methods=['GET','POST'])
+@app.route("/boletin/<int:id>", methods=['GET', 'PUT', 'DELETE'])
+def boletin(id = None):
+    # asunto = request.json['asunto'],
+    # body = request.json['body']
+    if request.method == 'GET':
+        if id is not None:
+            boletin = Boletin.query.get(id)
+            if boletin:
+                return jsonify(boletin.serialize()), 200
+            else:
+                return jsonify({"msg": "boletin no encontrado"}), 404
+        else:
+            boletines = Boletin.query.all()
+            boletines = list(map(lambda boletin: boletin.serialize(), boletines))
+            return jsonify(boletines), 200
+
+    if request.method == 'POST':
+        pass
+
+    if request.method == 'PUT':
+        pass
+
+    if request.method == 'DELETE':
+        pass
 
 
 if __name__ == "__main__":

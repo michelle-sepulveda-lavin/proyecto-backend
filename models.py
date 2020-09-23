@@ -181,3 +181,28 @@ class Edificio(db.Model):
         db.session.commit()
 
         
+""" Boletines """
+
+class Boletin(db.Model):
+    __tablename__ = "boletines"
+    id = db.Column(db.Integer, primary_key=True)
+    asunto = db.Column(db.String(120), nullable=False)
+    body = db.Column(db.String(250), nullable=False)
+
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "asunto": self.asunto,
+            "body": self.body
+        }
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
