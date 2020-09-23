@@ -108,7 +108,7 @@ class Role(db.Model):
 """ TABLA DE CLIENTES A CONTACTAR """
 
 class InfoContacto(db.Model):
-    __tablename__ = "infoContacto"
+    __tablename__ = "infocontacto"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
@@ -267,7 +267,7 @@ class Departamento(db.Model):
         db.session.commit()        
 
 class DepartamentoUsuario(db.Model):
-    __tablename__ = "departamentosUsuarios"
+    __tablename__ = "departamentosusuarios"
     id = db.Column(db.Integer, primary_key=True)
     numero_departamento = db.Column(db.String(120), nullable=False)
     estado = db.Column(db.String(120), nullable=False)    
@@ -277,7 +277,8 @@ class DepartamentoUsuario(db.Model):
     piso = db.Column(db.Integer, nullable=True)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
     modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False)
-    gastosComunes = db.relationship("GastoComun", backref="departamentosUsuarios") 
+    gastosComunes = db.relationship("GastoComun", backref="departamentosusuarios")
+    montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios") 
 
     def serialize(self):
         return{
@@ -366,14 +367,13 @@ class Estacionamiento(db.Model):
         db.session.commit() 
 
 class GastoComun(db.Model):
-    __tablename__ = "gastosComunes"
+    __tablename__ = "gastoscomunes"
     id = db.Column(db.Integer, primary_key=True)
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     monto = db.Column(db.Integer, nullable=False)
-    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosUsuarios.id'), nullable=False)  
-
-
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+    
     def serialize(self):
         return{
             "id": self.id,
@@ -381,7 +381,36 @@ class GastoComun(db.Model):
             "year": self.year,
             "monto": self.monto,
             "departamento_id": self.departamento_id
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+class MontosTotales(db.Model):
+    __tablename__ = "montostotales"
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    monto = db.Column(db.Integer, nullable=False)
+    comprobante = db.Column(db.String(250), nullable=False)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "month": self.month,
+            "year": self.year,
+            "monto": self.monto,
+            "comprobante": self.comprobante,
+            "departamento_id": self.departamento_id
         }
         
     def save(self):
