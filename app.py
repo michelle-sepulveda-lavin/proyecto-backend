@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun
 import json
 import os
 import sendgrid
