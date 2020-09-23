@@ -732,14 +732,10 @@ def crearConserje(id=None):
         telefono = request.form.get("telefono", None)
         turno = request.form.get("turno", None)
         avatar = request.files.get('avatar')
-        estado_conserje = request.json.get("estado_conserje", None)
+
         
         if not conserje:
             return jsonify({"msg": "No existe ese conserje"})
-
-        if type(estado_conserje) == bool:
-            conserje.state = estado_conserje
-            conserje.update()
         
         if nombre:
             conserje.nombre = nombre
@@ -769,7 +765,19 @@ def conserjes_edificio(id):
             return jsonify({"msg": "No hay conserjes en este edificio"})
         conserje = list(map(lambda cons: cons.serialize(), conserjes))
         return jsonify(conserje)
-        
+    
+@app.route("/conserjes/estado-conserje/<int:id>", methods=['PATCH'])
+def conserjes_estado(id):
+    conserje = Conserje.query.filter_by(id=id).first()
+    estado_conserje = request.json.get("estado_conserje", None)
+    if not conserje:
+        return jsonify({"msg": "No existe ese conserje"})
+
+    if type(estado_conserje) == bool:
+        conserje.state = estado_conserje
+        conserje.update()
+
+    return jsonify({"Msg": "Estado conserje Actualizado"})
 
 @app.route("/avatares/<avatar>")
 def get_avatar(avatar):
