@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento
 import json
 import os
 import sendgrid
@@ -881,8 +881,8 @@ def departamentoUsuario_by_Edificio(id=None):
             numero_departamento = request.json.get("numero_departamento")
             estado = request.json.get("estado")  
             residente = request.json.get("residente")  
-            bodega = request.json.get("bodega")  
-            estacionamiento = request.json.get("estacionamiento")  
+            bodega_id = request.json.get("bodega_id")  
+            estacionamiento_id = request.json.get("estacionamiento_id")  
             piso = request.json.get("piso")  
             modelo_id = request.json.get("modelo_id")   
 
@@ -908,8 +908,8 @@ def departamentoUsuario_by_Edificio(id=None):
             departamento.numero_departamento = numero_departamento
             departamento.estado = estado
             departamento.residente = residente
-            departamento.bodega = bodega
-            departamento.estacionamiento = estacionamiento
+            departamento.bodega_id = bodega_id
+            departamento.estacionamiento_id = estacionamiento_id
             departamento.piso = piso
             departamento.edificio_id = id
             departamento.modelo_id = modelo.id
@@ -966,6 +966,71 @@ def add_user_to_building(id):
                 departamento.estado = estado
                 departamento.update()
                 return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+
+@app.route("/add-bodega/<id>", methods=['POST'])
+def add_bodega(id):
+    bodega = Bodega.query.filter_by(edificio_id=id).first()
+
+    if bodega:
+        return jsonify({"msg": "La bodega ya fue creada"}), 404
+    if not bodega:
+        total_superficie = request.json.get("total_superficie")
+        cantidad_total = request.json.get("cantidad_total")
+
+        if not total_superficie:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+        if not cantidad_total:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+
+        new_bodega = Bodega()
+        new_bodega.total_superficie = int(total_superficie)
+        new_bodega.cantidad_total = int(cantidad_total)
+        new_bodega.edificio_id = id
+        new_bodega.save()
+
+        return jsonify({"msg": "La bodega creada exitosamente"}), 404
+
+@app.route("/add-estacionamiento/<id>", methods=['POST'])
+def add_estacionamiento(id):
+    estacionamiento = Estacionamiento.query.filter_by(edificio_id=id).first()
+
+    if estacionamiento:
+        return jsonify({"msg": "El estacionamiento ya fue creada"}), 404
+    if not estacionamiento:
+        total_superficie = request.json.get("total_superficie")
+        cantidad_total = request.json.get("cantidad_total")
+
+        if not total_superficie:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+        if not cantidad_total:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+
+        new_estacionamiento = Estacionamiento()
+        new_estacionamiento.total_superficie = (total_superficie)
+        new_estacionamiento.cantidad_total = (cantidad_total)
+        new_estacionamiento.edificio_id = id
+        new_estacionamiento.save()
+
+        return jsonify({"msg": "El estacionamiento creada exitosamente"}), 404
+
+@app.route("/estacionamientos/<id>", methods=['GET'])
+def estacionamiento(id):
+    estacionamiento = Estacionamiento.query.filter_by(edificio_id=id).first()
+
+    if not estacionamiento:
+        return jsonify({"msg": "Los estacionamientos no han sido creados"}), 404
+    if estacionamiento:
+        return jsonify(estacionamiento.serialize()), 200
+
+@app.route("/bodegas/<id>", methods=['GET'])
+def bodegas(id):
+    bodega = Bodega.query.filter_by(edificio_id=id).first()
+
+    if not bodega:
+        return jsonify({"msg": "Las bodegas no han sido creadas"}), 404
+    if bodega:
+        return jsonify(bodega.serialize()), 200
+
 
 if __name__ == "__main__":
     manager.run()
