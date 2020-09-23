@@ -103,9 +103,9 @@ def register(id=None, rol_id=None):
             expire_in = datetime.timedelta(days=1)
             data = {
                 "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
-                "user": user.serialize_con_edificio()
+                "user": user.serialize()
             }
-        
+            return jsonify(data), 200
         if rol:
             roleID = rol.id
 
