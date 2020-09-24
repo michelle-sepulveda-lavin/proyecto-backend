@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, Paquete
 import json
 import os
 import sendgrid
@@ -1056,6 +1056,59 @@ def delete_estacionamiento(id):
     if estacionamiento:
         estacionamiento.delete()
         return jsonify({"msg": "Estacionamiento eliminado"}), 200
+
+@app.route("/paqueteria/<id>", methods=['POST', 'GET', 'PUT'])
+def paqueteria(id):
+    if request.method == 'POST':
+        edificio = Edificio.query.filter_by(id=id).first()
+        
+        if not edificio:
+            return jsonify({"msg": "El edificio no existe"}), 404
+        else:
+            numero_departamento = request.json.get("numero_departamento")
+
+            if not numero_departamento:
+                return jsonify({"msg": "Numero de departamento es obligatorio"}), 400
+            else:
+                departamento = DepartamentoUsuario.query.filter_by(numero_departamento=numero_departamento, edificio_id=id).first()
+
+                if not departamento:
+                    return jsonify({"msg": "El departamento no existe"}), 404
+                else:
+                    paquete = Paquete()
+                    paquete.departamento_id = departamento.id
+                    paquete.edificio_id = id
+                    paquete.save()
+
+                    return jsonify({"msg": "Paquete agregado exitosamente"}), 200
+    if request.method == 'GET':
+        paquetes = Paquete.query.filter_by(edificio_id=id).all()
+        
+        if not paquetes:
+            return jsonify({"msg": "El edificio no tiene paquetes"}), 400
+        else:
+            paquetes = list(map(lambda pqte: pqte.serialize(), paquetes))
+            return jsonify(paquetes), 200
+    
+    if request.method == 'PUT':
+        paquete = Paquete.query.filter_by(id=id).first()
+        
+        if not paquete:
+            return jsonify({"msg": "El paquete no existe"}), 404
+        else:
+            estado = request.json.get("estado")
+            
+            if not estado:
+                return jsonify({"msg": "El estado es requerido"}), 400
+            else:
+                paquete.estado = estado
+                paquete.update()
+
+                return jsonify({"msg": "El paquete fue ha sido entregado"}), 200
+
+
+            
+
 
 if __name__ == "__main__":
     manager.run()

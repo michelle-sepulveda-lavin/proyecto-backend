@@ -160,6 +160,8 @@ class Edificio(db.Model):
     departamentosUsuarios = db.relationship("DepartamentoUsuario", backref="edificio")
     bodegas = db.relationship("Bodega", backref="edificio")
     estacionamientos = db.relationship("Estacionamiento", backref="edificio")
+    paqueteria = db.relationship("Paquete", backref="edificio")
+
 
     def serialize(self):
         return{
@@ -278,7 +280,8 @@ class DepartamentoUsuario(db.Model):
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
     modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False) 
     gastosComunes = db.relationship("GastoComun", backref="departamentosusuarios")
-    montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios") 
+    montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios")
+    paqueteria = db.relationship("Paquete", backref="departamentoUsuario") 
 
     def serialize(self):
         return{
@@ -423,3 +426,38 @@ class MontosTotales(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit() 
+
+class Paquete(db.Model):
+    __tablename__ = "paqueteria"
+    id = db.Column(db.Integer, primary_key=True)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
+    estado = db.Column(db.Boolean, nullable=True, default=False)
+    
+    def serialize(self):
+        return{
+            "id": self.id,
+            "edificio": {
+                "id": self.edificio.id,
+                "name": self.edificio.nombre_edificio
+            },
+            "departamento": {
+                "id": self.departamentoUsuario.id,
+                "numero_departamento": self.departamentoUsuario.numero_departamento,
+                "residente": self.departamentoUsuario.residente,
+                "piso": self.departamentoUsuario.piso
+            },
+            "estado": self.estado
+            
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
