@@ -1087,7 +1087,7 @@ def paqueteria(id):
 
                     return jsonify({"msg": "Paquete agregado exitosamente"}), 200
     if request.method == 'GET':
-        paquetes = Paquete.query.filter_by(edificio_id=id).all()
+        paquetes = Paquete.query.filter_by(edificio_id=id, estado=False).all()
         
         if not paquetes:
             return jsonify({"msg": "El edificio no tiene paquetes"}), 400
