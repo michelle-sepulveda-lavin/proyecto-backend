@@ -947,26 +947,32 @@ def add_user_to_building(id):
         residente = request.json.get("residente")
         estado = request.json.get("estado")
 
-        if not residente:
-            return jsonify({"msg": "residente es obligatorio"}), 404
-        else:
-            residenteID = User.query.filter_by(id=residente).first()
+        if residente == "default":
+            departamento.residente = None
+            departamento.estado = estado
+            departamento.update()
+            return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+
+        residenteID = User.query.filter_by(id=residente).first()
             
-            if not residenteID:
-                residenteName = User.query.filter_by(username=residente).first()
+        if not residenteID:
+            residenteName = User.query.filter_by(username=residente).first()
                 
-                if not residenteName:
-                    return jsonify({"msg": "el usuario no existe"}), 404
-                else:
-                    departamento.residente = residenteName.id
-                    departamento.estado = estado
-                    departamento.update()
-                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
-            else:
-                departamento.residente = residenteID.id
+            if residente:
+                departamento.residente = residenteName.id
                 departamento.estado = estado
                 departamento.update()
                 return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            if not residenteName:
+                departamento.residente = None
+                departamento.estado = estado
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+        else:
+            departamento.residente = residenteID.id
+            departamento.estado = estado
+            departamento.update()
+            return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
 
 @app.route("/add-bodega/<id>", methods=['POST'])
 def add_bodega(id):
@@ -1032,6 +1038,25 @@ def bodegas(id):
     if bodega:
         return jsonify(bodega.serialize()), 200
 
+@app.route("/delete-bodega-edificio/<id>", methods=['DELETE'])
+def delete_bodegas(id):
+    bodega = Bodega.query.filter_by(edificio_id=id).first()
+
+    if not bodega:
+        return jsonify({"msg": "Las bodegas no existe"}), 404
+    if bodega:
+        bodega.delete()
+        return jsonify({"msg": "Bodega eliminada"}), 200
+
+@app.route("/delete-estacionamiento-edificio/<id>", methods=['DELETE'])
+def delete_estacionamiento(id):
+    estacionamiento = Estacionamiento.query.filter_by(edificio_id=id).first()
+
+    if not estacionamiento:
+        return jsonify({"msg": "Estacionamientos no existen"}), 404
+    if estacionamiento:
+        estacionamiento.delete()
+        return jsonify({"msg": "Estacionamiento eliminado"}), 200
 
 
 @app.route("/boletin", methods=['GET','POST'])

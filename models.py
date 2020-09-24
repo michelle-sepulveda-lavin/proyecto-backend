@@ -276,7 +276,7 @@ class DepartamentoUsuario(db.Model):
     estacionamiento_id = db.Column(db.Integer, nullable=True, unique=True)
     piso = db.Column(db.Integer, nullable=True)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
-    modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False)
+    modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False) 
     gastosComunes = db.relationship("GastoComun", backref="departamentosusuarios")
     montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios") 
 
