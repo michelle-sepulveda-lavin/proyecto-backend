@@ -10,6 +10,8 @@ class User(db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+    departamentosUsuarios = db.relationship("DepartamentoUsuario", backref="user")
+    conserje = db.relationship("Conserje", backref="users")
 
     def serialize(self):
         return{
@@ -19,7 +21,8 @@ class User(db.Model):
             "rol": {
                 "id": self.role.id,
                 "name": self.role.rol
-                }
+                },
+            "edificio": self.edificio_id
         }
 
 
@@ -35,7 +38,7 @@ class User(db.Model):
             "edificio": {
                 "id": self.edificio.id,
                 "name": self.edificio.nombre_edificio
-            } 
+            }
         }       
         
     def save(self):
@@ -83,6 +86,8 @@ class Role(db.Model):
     rol = db.Column(db.String(120), nullable=False, unique=True)
     users = db.relationship("User", backref="role")
 
+
+
     def serialize(self):
         return{
             "id": self.id,
@@ -103,12 +108,12 @@ class Role(db.Model):
 """ TABLA DE CLIENTES A CONTACTAR """
 
 class InfoContacto(db.Model):
-    __tablename__ = "infoContacto"
+    __tablename__ = "infocontacto"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), nullable=False, unique = True)
+    email = db.Column(db.String(120), nullable=False, unique=True)
     phone = db.Column(db.Integer, nullable=False)
-    state = db.Column(db.Boolean, nullable=True, default=None)
+    state = db.Column(db.Boolean, nullable=True, default=True)
     plan = db.Column(db.String(250), nullable=False)
 
     def serialize(self):
@@ -150,6 +155,11 @@ class Edificio(db.Model):
     plan_id = db.Column(db.Integer, db.ForeignKey('planes.id'), nullable=False)
     archivoCSV = db.Column(db.String(100), default=None)
     users = db.relationship("User", backref="edificio")
+    conserjes = db.relationship("Conserje", backref="edificio")
+    departamentos = db.relationship("Departamento", backref="edificio")
+    departamentosUsuarios = db.relationship("DepartamentoUsuario", backref="edificio")
+    bodegas = db.relationship("Bodega", backref="edificio")
+    estacionamientos = db.relationship("Estacionamiento", backref="edificio")
 
     def serialize(self):
         return{
@@ -180,7 +190,241 @@ class Edificio(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+class Conserje(db.Model):
+    __tablename__ = "conserjes"
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(120), nullable=False)
+    telefono = db.Column(db.String(120), nullable=False)
+    turno = db.Column(db.String(120), nullable=False)
+    avatar = db.Column(db.String(100), nullable=True, default="sin-imagen.png")
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    state = db.Column(db.Boolean, nullable=True, default=False)
+
+
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "avatar": self.avatar,
+            "nombre": self.nombre,
+            "telefono": self.telefono,
+            "turno": self.turno,
+            "edificio": {
+                "id": self.edificio.id,
+                },
+            "estado": self.state,
+            "usuario": {
+                "username": self.users.username,
+                "email": self.users.email,
+                "usuario_id": self.users.rol_id
+            }
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()        
+
         
+class Departamento(db.Model):
+    __tablename__ = "departamentos"
+    id = db.Column(db.Integer, primary_key=True)
+    modelo = db.Column(db.String(120), nullable=False)
+    total = db.Column(db.Integer, nullable=False)
+    interior = db.Column(db.Integer, nullable=False)
+    terraza = db.Column(db.Integer, nullable=False)
+    cantidad_total = db.Column(db.Integer, nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
+    departamentosUsuarios = db.relationship("DepartamentoUsuario", backref="departamento")
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "modelo": self.modelo,
+            "total": self.total,
+            "interior": self.interior,
+            "terraza": self.terraza, 
+            "cantidad_total": self.cantidad_total,
+            "edificio_id": self.edificio_id,
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()        
+
+class DepartamentoUsuario(db.Model):
+    __tablename__ = "departamentosusuarios"
+    id = db.Column(db.Integer, primary_key=True)
+    numero_departamento = db.Column(db.String(120), nullable=False)
+    estado = db.Column(db.String(120), nullable=False)    
+    residente = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    bodega_id = db.Column(db.Integer, nullable=True, unique=True) 
+    estacionamiento_id = db.Column(db.Integer, nullable=True, unique=True)
+    piso = db.Column(db.Integer, nullable=True)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
+    modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False)
+    gastosComunes = db.relationship("GastoComun", backref="departamentosusuarios")
+    montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios") 
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "numero_departamento": self.numero_departamento,
+            "estado": self.estado,
+            "residente": {
+                "id": self.user.id,
+                "name": self.user.username,
+                "email": self.user.email
+            } if self.residente else {"id": self.residente},
+            "bodega_id": self.bodega_id,
+            "estacionamiento_id": self.estacionamiento_id,
+            "piso": self.piso,
+            "edificio": {
+                "id": self.edificio.id,
+                "name": self.edificio.nombre_edificio
+            },
+            "modelo": {
+                "id": self.departamento.id,
+                "name": self.departamento.modelo
+            } 
+        }
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()  
+
+class Bodega(db.Model):
+    __tablename__ = "bodegas"
+    id = db.Column(db.Integer, primary_key=True)
+    total_superficie = db.Column(db.Integer, nullable=False)
+    cantidad_total = db.Column(db.Integer, nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "total_superficie": self.total_superficie,
+            "cantidad_total": self.cantidad_total,
+            "edificio_id": self.edificio_id,
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit() 
+
+class Estacionamiento(db.Model):
+    __tablename__ = "estacionamientos"
+    id = db.Column(db.Integer, primary_key=True)
+    total_superficie = db.Column(db.Integer, nullable=False)
+    cantidad_total = db.Column(db.Integer, nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)     
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "total_superficie": self.total_superficie,
+            "cantidad_total": self.cantidad_total,
+            "edificio_id": self.edificio_id,
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit() 
+
+class GastoComun(db.Model):
+    __tablename__ = "gastoscomunes"
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    monto = db.Column(db.Integer, nullable=False)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+    
+    def serialize(self):
+        return{
+            "id": self.id,
+            "month": self.month,
+            "year": self.year,
+            "monto": self.monto,
+            "departamento_id": self.departamento_id
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+class MontosTotales(db.Model):
+    __tablename__ = "montostotales"
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    monto = db.Column(db.Integer, nullable=False)
+    comprobante = db.Column(db.String(250), nullable=False)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "month": self.month,
+            "year": self.year,
+            "monto": self.monto,
+            "comprobante": self.comprobante,
+            "departamento_id": self.departamento_id
+        }
+        
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
 """ Boletines """
 
 class Boletin(db.Model):
@@ -206,3 +450,5 @@ class Boletin(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+""" Fin Boletines """

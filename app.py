@@ -1,5 +1,5 @@
 import datetime
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_from_directory
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from flask_cors import CORS
@@ -7,13 +7,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Boletin
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, Boletin
 import json
 import os
 import sendgrid
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import *
 from libs.functions import allowed_file
+from io import TextIOWrapper
+import csv
 
 ALLOWED_EXTENSIONS_IMAGES = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_FILES = {'pdf', 'csv'}
@@ -70,7 +72,7 @@ def register(id=None, rol_id=None):
         password = request.json.get("password", None)
         rol_id = request.json.get("rol_id", None)
         email = request.json.get("email", None)
-        edificios_id = request.json.get("edificios_rol", None)
+        edificio_id = request.json.get("edificio_id", None)
 
         if not password:
             return jsonify({"msg": "password is required"}), 400
@@ -94,7 +96,7 @@ def register(id=None, rol_id=None):
             user.username = username
             user.password = generate_password_hash(password)
             user.rol_id = rol_id
-            user.edificios_id = edificios_id
+            user.edificio_id = edificio_id
             user.email = email
             user.save()
 
@@ -111,7 +113,7 @@ def register(id=None, rol_id=None):
             user.username = username
             user.password = generate_password_hash(password)
             user.rol_id = roleID
-            user.edificios_id = edificios_id
+            user.edificio_id = edificio_id
             user.email = email
             user.save()
 
@@ -143,28 +145,23 @@ def register(id=None, rol_id=None):
 
     if request.method == 'PUT':
 
-
         password = request.json.get("password", None)
         username = request.json.get("username")
         email = request.json.get("email", None)
-        user.edificios_id = request.json.get("edificios_rol", None)
+        edificio_id = request.json.get("edificio_id", None)
 
       
-        if not password:
-            return jsonify({"msg": "password is required"}), 400
-
+        """ if not password:
+            return jsonify({"msg": "password is required"}), 400 """
+        """ if not username:
+            return jsonify({"msg": "username is required"}), 400
+        """
         if not email:
-            return jsonify({"msg": "email is required"}), 400
+            return jsonify({"msg": "email is required"}), 400 
 
         user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({"msg": "el email no existe"}), 400
         
-        
-  
-        user.password = generate_password_hash(password)
-        user.username = username
-        user.edificios_id = edificios_id
+        user.edificio_id = edificio_id
         user.update()
         return jsonify({"msg": "usuario actualizado correctamente"}), 200
 
@@ -511,6 +508,14 @@ def crearEdificio(id=None):
             filename_archivoCSV = secure_filename(archivoCSV.filename)
             archivoCSV.save(os.path.join(app.config['UPLOAD_FOLDER']+"/csv", filename_archivoCSV))
 
+        """ archivoCSV = request.files['archivoCSV']
+        csv_file = TextIOWrapper(archivoCSV)
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        
+        for row in csv_reader:
+            departamento = Departamento(modelo=row[0], total=int(row[1]), interior=int(row[2]), terraza=int(row[3]), cantidad_total=int(row[4]))
+            departamento.save()
+        """
         
         edificio = Edificio()
         edificio.nombre_edificio = nombre_edificio
@@ -617,7 +622,415 @@ def get_edificio_by_id(id):
         return jsonify({"msg": "Edificio no existente"}), 400
     else:
         return jsonify(edificio.serialize()), 200   
+        return jsonify(edificio.serialize()), 200
+        
+@app.route("/conserjes/<int:id>", methods=['DELETE', 'PATCH', 'GET'])
+@app.route("/conserjes", methods=['POST', 'GET'])
+def crearConserje(id=None):
 
+    if request.method == 'GET':
+        if id:
+            conserje = Conserje.query.filter_by(id=id).first()
+            if not conserje:
+                return jsonify({"msg": "Conserje no existe"})
+            return jsonify(conserje.serialize())
+
+        conserjes = Conserje.query.all()
+        if not conserjes:
+            return jsonify({"msg": "No hay conserjes, usar metodo POST"}), 200
+        else:
+            conserjes = list(map(lambda conserje: conserje.serialize(), conserjes))
+            return jsonify(conserjes), 200
+
+    if request.method == 'POST':
+
+        username = request.form.get("username", None)
+        password = request.form.get("password", None)
+        rol_id = request.form.get("rol_id", None)
+        email = request.form.get("email", None)
+        nombre = request.form.get("nombre", None)
+        telefono = request.form.get("telefono", None)
+        turno = request.form.get("turno", None)
+        edificio_id = request.form.get("edificios_id", None)
+        avatar = request.files.get('avatar')
+        if not username:
+            return ({"msg": "Nombre de usuario es requerido"}), 404
+        if not password:
+            return ({"msg": "Contraseña es requerida"}), 404
+        if not rol_id:
+            return ({"msg": "rol_id es requerido"}), 404 
+        if not email:
+            return ({"msg": "El correo es requerido"}), 404
+
+        
+        if not nombre:
+            return ({"msg": "nombre es requerido"}), 404
+        if not telefono:
+            return ({"msg": "telefono es requerido"}), 404
+        if not turno:
+            return ({"msg": "turno es requerido"}), 404 
+        if not edificio_id:
+            return ({"msg": "edificio_id es requerido"}), 404
+
+
+        user = User.query.filter_by(username=username).first()
+        user_mail = User.query.filter_by(email=email).first()
+        conserje_nombre = Conserje.query.filter_by(nombre=nombre).first()
+
+        if conserje_nombre:
+            return jsonify({"msg": "Conserje ya existe"}), 400
+
+        if user_mail:
+            return jsonify({"msg": "Correo ya registrado"}), 400
+        if user:
+            return jsonify({"msg": "Nombre usuario ya registrado"}), 400
+        
+        rolId = Role.query.filter_by(id=rol_id).first()
+
+        if rolId:
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            user.rol_id = rol_id
+            user.edificio_id = edificio_id
+            user.email = email
+            user.save()
+
+        new_User = User.query.filter_by(email=email).first()
+        
+        if new_User:
+            usuario_id = new_User.id
+
+        
+        filename = "sin-imagen.png"
+        if avatar and allowed_file(avatar.filename, ALLOWED_EXTENSIONS_IMAGES):
+            filename = secure_filename(avatar.filename)
+            avatar.save(os.path.join(app.config['UPLOAD_FOLDER']+"/avatares", filename))
+        
+        conserje = Conserje()
+        conserje.nombre = nombre
+        conserje.telefono = telefono
+        conserje.turno = turno
+        conserje.edificio_id = edificio_id
+        conserje.usuario_id = usuario_id
+        conserje.avatar = filename
+        conserje.save()
+
+        return jsonify({"msg": "Conserje creado"}), 200
+
+    if request.method == 'DELETE':
+        conserje = Conserje.query.filter_by(id=id).first()
+        if not conserje:
+            return jsonify({"msg": "Conserje no existe"})
+        conserje.delete()
+        return jsonify({"msg": "conserje borrado"})
+
+
+    if request.method == 'PATCH':
+        conserje = Conserje.query.filter_by(id=id).first()
+
+        nombre = request.form.get("nombre", None)
+        telefono = request.form.get("telefono", None)
+        turno = request.form.get("turno", None)
+        avatar = request.files.get('avatar')
+
+        
+        if not conserje:
+            return jsonify({"msg": "No existe ese conserje"})
+        
+        if nombre:
+            conserje.nombre = nombre
+            conserje.update()
+        if telefono:
+            conserje.telefono = telefono
+            conserje.update()
+        if turno:
+            conserje.turno = turno
+            conserje.update()
+        if avatar:
+            filename = "sin-imagen.png"
+            if avatar and allowed_file(avatar.filename, ALLOWED_EXTENSIONS_IMAGES):
+                filename = secure_filename(avatar.filename)
+                avatar.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatares", filename))
+                conserje.avatar = filename
+                conserje.update()
+        
+        return jsonify({"Msg": "Conserje Actualizado"})
+ 
+        
+@app.route("/conserjes/edificio/<int:id>", methods=['POST', 'GET', 'DELETE', 'PUT'])
+def conserjes_edificio(id):
+    if request.method == 'GET':
+        conserjes = Conserje.query.filter_by(edificio_id=id)
+        if not conserjes:
+            return jsonify({"msg": "No hay conserjes en este edificio"})
+        conserje = list(map(lambda cons: cons.serialize(), conserjes))
+        return jsonify(conserje)
+    
+@app.route("/conserjes/estado-conserje/<int:id>", methods=['PATCH'])
+def conserjes_estado(id):
+    conserje = Conserje.query.filter_by(id=id).first()
+    estado_conserje = request.json.get("estado_conserje", None)
+    if not conserje:
+        return jsonify({"msg": "No existe ese conserje"})
+
+    if type(estado_conserje) == bool:
+        conserje.state = estado_conserje
+        conserje.update()
+
+    return jsonify({"Msg": "Estado conserje Actualizado"})
+
+@app.route("/info-departamento/<id>", methods=['POST', 'GET', 'DELETE'])
+def departamento_by_id(id):
+    if request.method == 'GET':
+        departamentos = Departamento.query.filter_by(edificio_id=id).all()
+        
+        if not departamentos:
+            return jsonify({"msg": "No hay departamentos, usar metodo POST"}), 404
+        if departamentos:
+            departamentos = list(map(lambda depto: depto.serialize(), departamentos))
+            return jsonify((departamentos))
+
+    if request.method == 'POST':
+        edificio = Edificio.query.filter_by(id=id).first()
+        if not edificio:
+            return jsonify({"msg": "El edificio no existe"}), 404
+        else:
+            modelo = request.json.get("modelo")
+            total = request.json.get("total")
+            interior = request.json.get("interior")
+            terraza = request.json.get("terraza")
+            cantidad_total = request.json.get("cantidad_total")
+            edificio_id = id
+
+            if not modelo:
+               return jsonify({"msg": "Modelo es requerido"}), 400
+            if not total:
+               return jsonify({"msg": "Superficie total es requerido"}), 400 
+            if not interior:
+               return jsonify({"msg": "Interior es requerido"}), 400 
+            if not terraza:
+               return jsonify({"msg": "Terraza es requerido"}), 400 
+            if not cantidad_total:
+               return jsonify({"msg": "Cantidad total de departamentos es requerido"}), 400
+
+            departamento = Departamento()
+            departamento.modelo = modelo
+            departamento.total = total
+            departamento.interior = interior
+            departamento.terraza = terraza
+            departamento.cantidad_total = cantidad_total
+            departamento.edificio_id = id 
+            
+            departamento.save()
+
+            return jsonify({"msg": "departamento creado exitosamente"}), 200
+    
+    if request.method == 'DELETE':
+        departamento = Departamento.query.filter_by(id=id).first()
+
+        if not departamento:
+            return({"msg": "No existe el modelo de departamento señalado"}), 404
+        if departamento:
+            departamento.delete()
+            return jsonify({"msg": "El modelo de departamento ha sido eliminado exitosamente"}), 200
+            
+@app.route("/departamentoUsuario", methods=['GET'])
+@app.route("/departamentoUsuario/<id>", methods=['GET'])
+def departamentoUsuario(id=None):
+    if request.method == 'GET':
+        if not id:
+            departamentos = DepartamentoUsuario.query.all()
+
+            if not departamentos:
+                return jsonify({"msg": "No hay departamentos, usar metodo POST"}), 404
+            else:
+                departamentos = list(map(lambda dpto: dpto.serialize(), departamentos))
+                return jsonify(departamentos), 200
+        if id:
+            departamento = DepartamentoUsuario.query.filter_by(id=id).first()
+            
+            if not departamento:
+                return jsonify({"msg": "Departamento no existe"}), 404
+            else:
+                return jsonify(departamento.serialize()), 200
+
+        
+@app.route("/avatares/<avatar>")
+def get_avatar(avatar):
+    return send_from_directory(app.config['UPLOAD_FOLDER']+"/avatares", avatar)
+
+
+
+@app.route("/departamentoUsuarioEdificio/<id>", methods=['GET', 'POST', 'DELETE'])
+def departamentoUsuario_by_Edificio(id=None):
+    if request.method == 'GET':
+        departamentos = DepartamentoUsuario.query.filter_by(edificio_id=id).all()
+            
+        if not departamentos:
+            return jsonify({"msg": "Departamentos no existen"}), 404
+        else:
+            departamentos = list(map(lambda dpto: dpto.serialize(), departamentos))
+            return jsonify(departamentos), 200
+    
+    if request.method == 'POST':
+        edificio = Edificio.query.filter_by(id=id).first()
+
+        if not edificio:
+            return jsonify({"msg": "Edificio no existe"}), 404
+        else:
+            numero_departamento = request.json.get("numero_departamento")
+            estado = request.json.get("estado")  
+            residente = request.json.get("residente")  
+            bodega_id = request.json.get("bodega_id")  
+            estacionamiento_id = request.json.get("estacionamiento_id")  
+            piso = request.json.get("piso")  
+            modelo_id = request.json.get("modelo_id")   
+
+            if not numero_departamento:
+                return jsonify("msg", "numero_departamento es requerido"), 400
+            if not estado:
+                return jsonify("msg", "estado es requerido"), 400
+            """ if not residente:
+            return jsonify("msg", "residente es requerido"), 400  """
+            """ if not bodega:
+            return jsonify("msg", "bodega es requerido"), 400  
+            if not estacionamiento:
+            return jsonify("msg", "estacionamiento es requerido"), 400 """
+            if not piso:
+                return jsonify("msg", "piso es requerido"), 400
+            if not modelo_id:
+                return jsonify("msg", "modelo_id es requerido"), 400    
+
+            modelo = Departamento.query.filter_by(modelo=modelo_id).first()
+
+
+            departamento = DepartamentoUsuario()
+            departamento.numero_departamento = numero_departamento
+            departamento.estado = estado
+            departamento.residente = residente
+            departamento.bodega_id = bodega_id
+            departamento.estacionamiento_id = estacionamiento_id
+            departamento.piso = piso
+            departamento.edificio_id = id
+            departamento.modelo_id = modelo.id
+            departamento.save()
+
+            return jsonify({"msg" : "departamento de usuario creado exitosamente"}), 200
+    
+    if request.method == 'DELETE':
+        departamento = DepartamentoUsuario.query.filter_by(id=id).first()
+
+        if not departamento:
+            return jsonify({"msg": "Departamento no existe"}), 404
+        if departamento:
+            departamento.delete()
+            return jsonify({"msg": "El departamento ha sido eliminado exitosamente"}), 200
+
+@app.route("/usuarios-edificio/<id>", methods=['GET'])
+def usuarios_by_Edificio(id):
+    if request.method == 'GET':
+        usuarios = User.query.filter_by(edificio_id=int(id)).all()
+        if not usuarios:
+            return jsonify({"msg": "No existen usuarios en el edificio"}), 404
+        if usuarios:
+            usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
+            return jsonify(usuarios)
+
+@app.route("/add-residente/<id>", methods=['PUT'])
+def add_user_to_building(id):
+    departamento = DepartamentoUsuario.query.filter_by(id=id).first()
+
+    if not departamento:
+        return jsonify({"msg": "Departamento de usuario no encontrado"}), 404
+    if departamento:
+        residente = request.json.get("residente")
+        estado = request.json.get("estado")
+
+        if not residente:
+            return jsonify({"msg": "residente es obligatorio"}), 404
+        else:
+            residenteID = User.query.filter_by(id=residente).first()
+            
+            if not residenteID:
+                residenteName = User.query.filter_by(username=residente).first()
+                
+                if not residenteName:
+                    return jsonify({"msg": "el usuario no existe"}), 404
+                else:
+                    departamento.residente = residenteName.id
+                    departamento.estado = estado
+                    departamento.update()
+                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            else:
+                departamento.residente = residenteID.id
+                departamento.estado = estado
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+
+@app.route("/add-bodega/<id>", methods=['POST'])
+def add_bodega(id):
+    bodega = Bodega.query.filter_by(edificio_id=id).first()
+
+    if bodega:
+        return jsonify({"msg": "La bodega ya fue creada"}), 404
+    if not bodega:
+        total_superficie = request.json.get("total_superficie")
+        cantidad_total = request.json.get("cantidad_total")
+
+        if not total_superficie:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+        if not cantidad_total:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+
+        new_bodega = Bodega()
+        new_bodega.total_superficie = int(total_superficie)
+        new_bodega.cantidad_total = int(cantidad_total)
+        new_bodega.edificio_id = id
+        new_bodega.save()
+
+        return jsonify({"msg": "La bodega creada exitosamente"}), 404
+
+@app.route("/add-estacionamiento/<id>", methods=['POST'])
+def add_estacionamiento(id):
+    estacionamiento = Estacionamiento.query.filter_by(edificio_id=id).first()
+
+    if estacionamiento:
+        return jsonify({"msg": "El estacionamiento ya fue creada"}), 404
+    if not estacionamiento:
+        total_superficie = request.json.get("total_superficie")
+        cantidad_total = request.json.get("cantidad_total")
+
+        if not total_superficie:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+        if not cantidad_total:
+            return jsonify({"msg": "total_superficie es obligatorio"}), 404
+
+        new_estacionamiento = Estacionamiento()
+        new_estacionamiento.total_superficie = (total_superficie)
+        new_estacionamiento.cantidad_total = (cantidad_total)
+        new_estacionamiento.edificio_id = id
+        new_estacionamiento.save()
+
+        return jsonify({"msg": "El estacionamiento creada exitosamente"}), 404
+
+@app.route("/estacionamientos/<id>", methods=['GET'])
+def estacionamiento(id):
+    estacionamiento = Estacionamiento.query.filter_by(edificio_id=id).first()
+
+    if not estacionamiento:
+        return jsonify({"msg": "Los estacionamientos no han sido creados"}), 404
+    if estacionamiento:
+        return jsonify(estacionamiento.serialize()), 200
+
+@app.route("/bodegas/<id>", methods=['GET'])
+def bodegas(id):
+    bodega = Bodega.query.filter_by(edificio_id=id).first()
+
+    if not bodega:
+        return jsonify({"msg": "Las bodegas no han sido creadas"}), 404
+    if bodega:
+        return jsonify(bodega.serialize()), 200
 
 
 
@@ -639,13 +1052,46 @@ def boletin(id = None):
             return jsonify(boletines), 200
 
     if request.method == 'POST':
-        pass
+        asunto = request.json.get("asunto", None)
+        body = request.json.get("body", None)
 
-    if request.method == 'PUT':
-        pass
+        if not asunto:
+            return jsonify({"error": "Asunto es requerido"}), 400
+        if not body:
+            return jsonify({"error": "Body es requerido"}), 400
 
-    if request.method == 'DELETE':
-        pass
+        boletin = Boletin()
+        boletin.asunto = asunto
+        boletin.body = body
+        boletin.save()
+
+        return jsonify(boletin.serialize()), 201
+
+    # if request.method == 'PUT':
+    #     asunto = request.json.get("asunto", None)
+    #     body = request.json.get("body", None)
+
+    #     if not asunto:
+    #         return jsonify({"error": "Asunto es requerido"}), 400
+    #     if not body:
+    #         return jsonify({"error": "Body es requerido"}), 400
+
+    #     boletin = Boletin()
+    #     boletin.asunto = asunto
+    #     boletin.body = body
+    #     boletin.update()
+
+    #     return jsonify(boletin.serialize()), 201
+
+    # if request.method == 'DELETE':
+    #     boletin = Boletin.query.get(id)
+
+    #     if not asunto:
+    #         return jsonify({"msg": "Boletin es requerido"}), 400
+        
+    #     boletin.delete()
+
+    #     return jsonify({"msg": "Boletin borrado exitosamente"}), 200
 
 
 if __name__ == "__main__":
