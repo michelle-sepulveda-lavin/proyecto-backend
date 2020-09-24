@@ -160,6 +160,10 @@ class Edificio(db.Model):
     departamentosUsuarios = db.relationship("DepartamentoUsuario", backref="edificio")
     bodegas = db.relationship("Bodega", backref="edificio")
     estacionamientos = db.relationship("Estacionamiento", backref="edificio")
+    gastos_comunes = db.relationship("GastoComun", backref="edificio")
+    montos_totales = db.relationship("MontosTotales", backref="edificio")
+
+
 
     def serialize(self):
         return{
@@ -372,7 +376,9 @@ class GastoComun(db.Model):
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     monto = db.Column(db.Integer, nullable=False)
-    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
+    estado = db.Column(db.String(250), nullable=True, default="noPagado")
     
     def serialize(self):
         return{
@@ -380,7 +386,12 @@ class GastoComun(db.Model):
             "month": self.month,
             "year": self.year,
             "monto": self.monto,
-            "departamento_id": self.departamento_id
+            "estado": self.estado,
+            "departamento": {"departamento_id": self.departamentosusuarios.id,
+            "numero_depto": self.departamentosusuarios.numero_departamento,
+            "residente": self.departamentosusuarios.residente
+            },
+            "edificio": self.edificio.id
         }
         
     def save(self):
@@ -401,7 +412,8 @@ class MontosTotales(db.Model):
     year = db.Column(db.Integer, nullable=False)
     monto = db.Column(db.Integer, nullable=False)
     comprobante = db.Column(db.String(250), nullable=False)
-    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
 
     def serialize(self):
         return{
@@ -410,7 +422,8 @@ class MontosTotales(db.Model):
             "year": self.year,
             "monto": self.monto,
             "comprobante": self.comprobante,
-            "departamento_id": self.departamento_id
+            "departamento_id": self.departamento_id,
+            "edificio_id": self.edificio.id
         }
         
     def save(self):

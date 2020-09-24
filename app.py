@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, MontosTotales
 import json
 import os
 import sendgrid
@@ -859,6 +859,10 @@ def departamentoUsuario(id=None):
 def get_avatar(avatar):
     return send_from_directory(app.config['UPLOAD_FOLDER']+"/avatares", avatar)
 
+@app.route("/comprobantes/<comprobante>")
+def get_comprobante(comprobante):
+    return send_from_directory(app.config['UPLOAD_FOLDER']+"/comprobantes", comprobante)
+
 
 
 @app.route("/departamentoUsuarioEdificio/<id>", methods=['GET', 'POST', 'DELETE'])
@@ -1032,6 +1036,166 @@ def bodegas(id):
         return jsonify(bodega.serialize()), 200
 
 
+@app.route("/gastoscomunes/", methods=['POST', 'GET', 'DELETE', 'PUT'])
+def gastos_comunes():
+    
+    if request.method == 'POST':
+       
+        month = request.form.get("month")
+        year =  request.form.get("year")
+        monto =  request.form.get("monto")
+        departamento_id = request.form.get("departamento_id")
+        edificio_id = request.form.get("edificio_id")
+        comprobante = request.files.get('comprobante')
+        montoTotal = request.form.get("montoTotal")
+
+
+        if not month:
+            return jsonify({"msg": "El mes es requerido"}), 400
+        if not year:
+            return jsonify({"msg": "El año es requerido"}), 400 
+        if not monto:
+            return jsonify({"msg": "El monto es requerido"}), 400 
+        if not departamento_id:
+            return jsonify({"msg": "El id del departamento es requerido"}), 400
+        if not edificio_id:
+            return jsonify({"msg": "El id del edificio es requerido"}), 400
+        if not comprobante:
+            return jsonify({"msg": "El comprobante es requerido"}), 400
+        if not montoTotal:
+            return jsonify({"msg": "El monto total es requerido"}), 400
+            
+        edificio = Edificio.query.filter_by(id=edificio_id).first()
+        if not edificio:
+            return jsonify({"msg": "No existe el edificio"}), 400
+
+        filename = "sin-comprobante.pdf"
+        if comprobante and allowed_file(comprobante.filename, ALLOWED_EXTENSIONS_FILES):
+            filename = secure_filename(comprobante.filename)
+            comprobante.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/comprobantes", filename))
+
+        montos_mes = MontosTotales.query.filter_by(month=month).first()
+        if not montos_mes:
+           
+            monto_total = MontosTotales()
+            monto_total.month = month
+            monto_total.year = year
+            monto_total.monto = montoTotal
+            monto_total.comprobante = filename
+            monto_total.departamento_id = departamento_id
+            monto_total.edificio_id = edificio_id
+            monto_total.save()
+
+        gastos_depto = GastoComun.query.filter_by(month=month, departamento_id=departamento_id).first()
+
+        if gastos_depto:
+            return jsonify({"msg": "No puedes sobreescribir los gastos comunes del mes"}), 400
+
+        gasto_comun = GastoComun()
+        gasto_comun.month = month
+        gasto_comun.year = year
+        gasto_comun.monto = monto
+        gasto_comun.departamento_id = departamento_id
+        gasto_comun.edificio_id = edificio_id
+        
+        gasto_comun.save()
+
+        return jsonify({"msg": "Gasto comun creado exitosamente"}), 200
+
+@app.route("/gastoscomunes/edificio/<int:id>", methods=['GET', 'DELETE'])
+@app.route("/gastoscomunes/edificio/<int:id>/<int:mes>/<int:year>", methods=['GET', 'DELETE'])
+@app.route("/gastoscomunes/edificio/<int:id>/<int:mes>", methods=['GET', 'DELETE'])
+def gastos_edificio(id, mes = None, year = None):
+
+    if request.method == 'GET':
+
+        if year:
+            gastomesyear = GastoComun.query.filter_by(edificio_id=id, month=mes, year=year).all()
+            
+            if not gastomesyear:
+                return jsonify({"msg": "No hay gastos comunes para este mes y año"})
+        
+            gastosmesyear = list(map(lambda gastocomun: gastocomun.serialize(), gastomesyear))
+
+            return jsonify(gastosmesyear), 200
+
+
+        if mes:
+            gastomes = GastoComun.query.filter_by(edificio_id=id, month=mes).all()
+            
+            if not gastomes:
+                return jsonify({"msg": "No hay gastos comunes para este edificio o mes"})
+        
+            gastosmes = list(map(lambda gastocomun: gastocomun.serialize(), gastomes))
+
+            return jsonify(gastosmes), 200
+
+        gasto = GastoComun.query.filter_by(edificio_id=id).all()
+        
+        if not gasto:
+            return jsonify({"msg": "no hay gastos comunes para este edificio"})
+        
+        gastos = list(map(lambda gastocomun: gastocomun.serialize(), gasto))
+    
+        return jsonify(gastos), 200
+
+    if request.method == 'DELETE':
+
+        gasto = GastoComun.query.filter_by(edificio_id=id).first()
+                
+        if not gasto:
+            return jsonify({"msg": "no hay gastos comunes para este edificio"})
+                
+        gasto.delete()
+
+        return jsonify({"msg": "Gastos comunes del edificio borrados"}), 200
+
+
+@app.route("/gastoscomunes/depto/<int:edificio>/<int:depto>/", methods=['GET', 'DELETE'])
+def gastos_depto(edificio, depto):
+     if request.method == 'GET':
+
+            gastodepto = GastoComun.query.filter_by(edificio_id=edificio, departamento_id=depto).all()
+            
+            if not gastodepto:
+                return jsonify({"msg": "No hay gastos comunes para departamento"})
+        
+            gastosdeldepto = list(map(lambda gastocomun: gastocomun.serialize(), gastodepto))
+
+            return jsonify(gastosdeldepto), 200
+
+
+@app.route("/montostotales/edificio/<int:id>", methods=['GET', 'DELETE'])
+@app.route("/montostotales/edificio/<int:id>/<int:mes>", methods=['GET', 'DELETE'])
+def montos_totales(id, mes = None):
+
+    if request.method == 'GET':
+
+        monto_total = MontosTotales.query.filter_by(edificio_id=id).all()
+            
+        if not monto_total:
+            return jsonify({"msg": "No hay montos totales para este edificio"})
+        
+        montos = monto_total = list(map(lambda monto: monto.serialize(), monto_total))
+
+        return jsonify(montos), 200
+
+    if request.method == 'DELETE':
+
+        montos = MontosTotales.query.filter_by(edificio_id=id, month= mes).first()
+                
+        if not montos:
+            return jsonify({"msg": "no hay montos para este edificio"})
+                
+        montos.delete()
+
+        return jsonify({"msg": "Monto total del edificio borrado"}), 200
+
 if __name__ == "__main__":
     manager.run()
+
+
+
+
+
 
