@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, MontosTotales
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, MontosTotales, Boletin
 import json
 import os
 import sendgrid
@@ -621,6 +621,7 @@ def get_edificio_by_id(id):
     if not edificio:
         return jsonify({"msg": "Edificio no existente"}), 400
     else:
+        return jsonify(edificio.serialize()), 200   
         return jsonify(edificio.serialize()), 200
         
 @app.route("/conserjes/<int:id>", methods=['DELETE', 'PATCH', 'GET'])
@@ -950,26 +951,32 @@ def add_user_to_building(id):
         residente = request.json.get("residente")
         estado = request.json.get("estado")
 
-        if not residente:
-            return jsonify({"msg": "residente es obligatorio"}), 404
-        else:
-            residenteID = User.query.filter_by(id=residente).first()
+        if residente == "default":
+            departamento.residente = None
+            departamento.estado = estado
+            departamento.update()
+            return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+
+        residenteID = User.query.filter_by(id=residente).first()
             
-            if not residenteID:
-                residenteName = User.query.filter_by(username=residente).first()
+        if not residenteID:
+            residenteName = User.query.filter_by(username=residente).first()
                 
-                if not residenteName:
-                    return jsonify({"msg": "el usuario no existe"}), 404
-                else:
-                    departamento.residente = residenteName.id
-                    departamento.estado = estado
-                    departamento.update()
-                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
-            else:
-                departamento.residente = residenteID.id
+            if residente:
+                departamento.residente = residenteName.id
                 departamento.estado = estado
                 departamento.update()
                 return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            if not residenteName:
+                departamento.residente = None
+                departamento.estado = estado
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+        else:
+            departamento.residente = residenteID.id
+            departamento.estado = estado
+            departamento.update()
+            return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
 
 @app.route("/add-bodega/<id>", methods=['POST'])
 def add_bodega(id):
@@ -1034,6 +1041,86 @@ def bodegas(id):
         return jsonify({"msg": "Las bodegas no han sido creadas"}), 404
     if bodega:
         return jsonify(bodega.serialize()), 200
+
+@app.route("/delete-bodega-edificio/<id>", methods=['DELETE'])
+def delete_bodegas(id):
+    bodega = Bodega.query.filter_by(edificio_id=id).first()
+
+    if not bodega:
+        return jsonify({"msg": "Las bodegas no existe"}), 404
+    if bodega:
+        bodega.delete()
+        return jsonify({"msg": "Bodega eliminada"}), 200
+
+@app.route("/delete-estacionamiento-edificio/<id>", methods=['DELETE'])
+def delete_estacionamiento(id):
+    estacionamiento = Estacionamiento.query.filter_by(edificio_id=id).first()
+
+    if not estacionamiento:
+        return jsonify({"msg": "Estacionamientos no existen"}), 404
+    if estacionamiento:
+        estacionamiento.delete()
+        return jsonify({"msg": "Estacionamiento eliminado"}), 200
+
+
+@app.route("/boletin", methods=['GET','POST'])
+@app.route("/boletin/<int:id>", methods=['GET', 'PUT', 'DELETE'])
+def boletin(id = None):
+    # asunto = request.json['asunto'],
+    # body = request.json['body']
+    if request.method == 'GET':
+        if id is not None:
+            boletin = Boletin.query.get(id)
+            if boletin:
+                return jsonify(boletin.serialize()), 200
+            else:
+                return jsonify({"msg": "boletin no encontrado"}), 404
+        else:
+            boletines = Boletin.query.all()
+            boletines = list(map(lambda boletin: boletin.serialize(), boletines))
+            return jsonify(boletines), 200
+
+    if request.method == 'POST':
+        asunto = request.json.get("asunto", None)
+        body = request.json.get("body", None)
+
+        if not asunto:
+            return jsonify({"error": "Asunto es requerido"}), 400
+        if not body:
+            return jsonify({"error": "Body es requerido"}), 400
+
+        boletin = Boletin()
+        boletin.asunto = asunto
+        boletin.body = body
+        boletin.save()
+
+        return jsonify(boletin.serialize()), 201
+
+    # if request.method == 'PUT':
+    #     asunto = request.json.get("asunto", None)
+    #     body = request.json.get("body", None)
+
+    #     if not asunto:
+    #         return jsonify({"error": "Asunto es requerido"}), 400
+    #     if not body:
+    #         return jsonify({"error": "Body es requerido"}), 400
+
+    #     boletin = Boletin()
+    #     boletin.asunto = asunto
+    #     boletin.body = body
+    #     boletin.update()
+
+    #     return jsonify(boletin.serialize()), 201
+
+    # if request.method == 'DELETE':
+    #     boletin = Boletin.query.get(id)
+
+    #     if not asunto:
+    #         return jsonify({"msg": "Boletin es requerido"}), 400
+        
+    #     boletin.delete()
+
+    #     return jsonify({"msg": "Boletin borrado exitosamente"}), 200
 
 
 @app.route("/gastoscomunes/", methods=['POST', 'GET', 'DELETE', 'PUT'])
