@@ -276,8 +276,9 @@ class DepartamentoUsuario(db.Model):
     estacionamiento_id = db.Column(db.Integer, nullable=True, unique=True)
     piso = db.Column(db.Integer, nullable=True)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
-    modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False)
-    gastosComunes = db.relationship("GastoComun", backref="departamentosusuarios") 
+    modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False) 
+    gastosComunes = db.relationship("GastoComun", backref="departamentosusuarios")
+    montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios") 
 
     def serialize(self):
         return{
@@ -371,8 +372,8 @@ class GastoComun(db.Model):
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     monto = db.Column(db.Integer, nullable=False)
-    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)
-
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+    
     def serialize(self):
         return{
             "id": self.id,
@@ -380,7 +381,36 @@ class GastoComun(db.Model):
             "year": self.year,
             "monto": self.monto,
             "departamento_id": self.departamento_id
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+class MontosTotales(db.Model):
+    __tablename__ = "montostotales"
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    monto = db.Column(db.Integer, nullable=False)
+    comprobante = db.Column(db.String(250), nullable=False)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)  
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "month": self.month,
+            "year": self.year,
+            "monto": self.monto,
+            "comprobante": self.comprobante,
+            "departamento_id": self.departamento_id
         }
         
     def save(self):
