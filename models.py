@@ -379,6 +379,7 @@ class GastoComun(db.Model):
     departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
     estado = db.Column(db.String(250), nullable=True, default="noPagado")
+    pago = db.Column(db.String(250), nullable=True, default=None)
     
     def serialize(self):
         return{
@@ -391,7 +392,8 @@ class GastoComun(db.Model):
             "numero_depto": self.departamentosusuarios.numero_departamento,
             "residente": self.departamentosusuarios.residente
             },
-            "edificio": self.edificio.id
+            "edificio": self.edificio.id,
+            "pago": self.pago
         }
         
     def save(self):
