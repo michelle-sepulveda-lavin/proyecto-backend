@@ -306,7 +306,10 @@ class DepartamentoUsuario(db.Model):
             "modelo": {
                 "id": self.departamento.id,
                 "name": self.departamento.modelo
-            } 
+            },
+
+
+
         }
 
     def save(self):

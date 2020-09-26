@@ -447,7 +447,6 @@ def crearEdificio(id=None):
     if request.method == 'POST':
         nombre_edificio = request.form.get("nombre_edificio")
         direccion = request.form.get("direccion")
-        """ nombre_administrador = request.form.get("nombre_administrador")"""
         telefono = request.form.get("telefono")
         correo = request.form.get("correo") 
         numero_pisos = request.form.get("numero_pisos")
@@ -462,41 +461,33 @@ def crearEdificio(id=None):
         plan = Plan.query.filter_by(id=plan_id).first()
 
         if not nombre_edificio:
-            return ({"msg": "nombre_edificio es requerido"}), 404
-        """ if not nombre_administrador:
-            return ({"msg": "nombre_administrador es requerido"}), 404"""
+            return ({"msg": "El nombre del edificio es obligatorio"}), 404
         if not direccion:
-            return ({"msg": "direccion es requerido"}), 404
+            return ({"msg": "Direccion es obligatoria"}), 404
         if not telefono:
-            return ({"msg": "telefono es requerido"}), 404 
+            return ({"msg": "Telefono es obligatorio"}), 404 
         if not correo:
-            return ({"msg": "correo es requerido"}), 404
+            return ({"msg": "Correo es obligatorio"}), 404
         if not numero_pisos:
-            return ({"msg": "numero_pisos es requerido"}), 404
+            return ({"msg": "Numero de pisos es obligatorio"}), 404
         if not numero_departamentos:
-            return ({"msg": "numero_departamentos es requerido"}), 404
+            return ({"msg": "Numero de departamentos es obligatorio"}), 404
         if not total_bodegas:
-            return ({"msg": "total_bodegas es requerido"}), 404
+            return ({"msg": "El total de bodegas es obligatorio"}), 404
         if not total_estacionamientos:
-            return ({"msg": "total_estacionamientos es requerido"}), 404
+            return ({"msg": "El total deestacionamientos es obligatorio"}), 404
         if not inicio_contratacion:
-            return ({"msg": "inicio_contratacion es requerido"}), 404
+            return ({"msg": "Inicio del contrato es obligatorio"}), 404
         if not termino_contrato:
-            return ({"msg": "termino_contrato es requerido"}), 404
+            return ({"msg": "Termino del contrato es obligatorio"}), 404
         if not dia_vencimiento:
-            return ({"msg": "dia_vencimiento es requerido"}), 404
+            return ({"msg": "Dia vencimiento gastos comunes es obligatorio"}), 404
         if int(dia_vencimiento) > 31:
-            return jsonify({"msg": "el dia vencimiento no es valido"}), 400
+            return jsonify({"msg": "El dia de vencimiento no es valido"}), 400
         if not plan_id:
-            return ({"msg": "plan_id es requerido"}), 404
-        if not plan:
-            return jsonify({"msg": "plan id incorrecto"}), 400 
-        """ if not username_id:
-            return ({"msg": "username_id es requerido"}), 404
-        if not username:
-            return jsonify({"msg": "usuario id incorrecto"}), 400 """
+            return ({"msg": "El plan es obligatorio"}), 404
 
-        archivoCSV = request.files['archivoCSV']
+        """ archivoCSV = request.files['archivoCSV']
 
         if 'archivoCSV' not in request.files:
             return jsonify({"msg": {"archivoCSV":"archivoCSV is required"}}), 400
@@ -506,20 +497,10 @@ def crearEdificio(id=None):
         filename_archivoCSV = "sin-archivoCSV.csv"
         if archivoCSV and allowed_file(archivoCSV.filename, ALLOWED_EXTENSIONS_FILES):
             filename_archivoCSV = secure_filename(archivoCSV.filename)
-            archivoCSV.save(os.path.join(app.config['UPLOAD_FOLDER']+"/csv", filename_archivoCSV))
-
-        """ archivoCSV = request.files['archivoCSV']
-        csv_file = TextIOWrapper(archivoCSV)
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        
-        for row in csv_reader:
-            departamento = Departamento(modelo=row[0], total=int(row[1]), interior=int(row[2]), terraza=int(row[3]), cantidad_total=int(row[4]))
-            departamento.save()
-        """
+            archivoCSV.save(os.path.join(app.config['UPLOAD_FOLDER']+"/csv", filename_archivoCSV)) """
         
         edificio = Edificio()
         edificio.nombre_edificio = nombre_edificio
-        """ edificio.nombre_administrador = nombre_administrador """
         edificio.direccion = direccion
         edificio.telefono = telefono
         edificio.correo = correo 
@@ -531,8 +512,7 @@ def crearEdificio(id=None):
         edificio.termino_contrato = termino_contrato
         edificio.dia_vencimiento = dia_vencimiento
         edificio.plan_id = int(plan_id)
-        """ edificio.username_id = int(username_id) """
-        edificio.archivoCSV = filename_archivoCSV
+        """ edificio.archivoCSV = filename_archivoCSV """
         edificio.save()
 
         return jsonify({"msg": "Edificio creado"}), 200
@@ -904,23 +884,27 @@ def departamentoUsuario_by_Edificio(id=None):
             if not piso:
                 return jsonify("msg", "piso es requerido"), 400
             if not modelo_id:
-                return jsonify("msg", "modelo_id es requerido"), 400    
+                return jsonify("msg", "modelo_id es requerido"), 400 
 
-            modelo = Departamento.query.filter_by(modelo=modelo_id).first()
+            numero = DepartamentoUsuario.query.filter_by(numero_departamento=numero_departamento, edificio_id=id).first()
 
+            if numero:
+                return jsonify({"msg": "El numero de departamento ya existe"}), 400
+            else:
+                modelo = Departamento.query.filter_by(modelo=modelo_id).first()
 
-            departamento = DepartamentoUsuario()
-            departamento.numero_departamento = numero_departamento
-            departamento.estado = estado
-            departamento.residente = residente
-            departamento.bodega_id = bodega_id
-            departamento.estacionamiento_id = estacionamiento_id
-            departamento.piso = piso
-            departamento.edificio_id = id
-            departamento.modelo_id = modelo.id
-            departamento.save()
+                departamento = DepartamentoUsuario()
+                departamento.numero_departamento = numero_departamento
+                departamento.estado = estado
+                departamento.residente = residente
+                departamento.bodega_id = bodega_id
+                departamento.estacionamiento_id = estacionamiento_id
+                departamento.piso = piso
+                departamento.edificio_id = id
+                departamento.modelo_id = modelo.id
+                departamento.save()
 
-            return jsonify({"msg" : "departamento de usuario creado exitosamente"}), 200
+                return jsonify({"msg" : "departamento de usuario creado exitosamente"}), 200
     
     if request.method == 'DELETE':
         departamento = DepartamentoUsuario.query.filter_by(id=id).first()
@@ -1356,7 +1340,7 @@ def montos_totales(id, mes = None):
 
         return jsonify({"msg": "Monto total del edificio borrado"}), 200
 
-@app.route("/departamentoUsuario/<id>", methods=['GET'])
+@app.route("/infoDepartamentoUsuario/<id>", methods=['GET'])
 def depto_usuario(id):
 
     departamento_usuario = DepartamentoUsuario.query.filter_by(residente=id).first()
@@ -1364,7 +1348,17 @@ def depto_usuario(id):
     if not departamento_usuario:
         return jsonify({"msg": "No existe departamento para este usuario"})
 
-    return jsonify(departamento_usuario.serialize), 200
+    return jsonify(departamento_usuario.serialize()), 200
+
+@app.route("/paqueteriaUsuario/<id>", methods=['GET'])
+def dpto_usuario_paqueteria(id):
+    paquetes = Paquete.query.filter_by(departamento_id=id, estado=False).all()
+
+    if not paquetes:
+        return jsonify({"msg": "no existen paquetes para este edificio"})
+    else:
+        paquetes = list(map(lambda paquete: paquete.serialize(), paquetes))
+        return jsonify(paquetes), 200
 
 if __name__ == "__main__":
     manager.run()
