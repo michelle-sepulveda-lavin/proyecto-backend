@@ -163,7 +163,7 @@ class Edificio(db.Model):
     paqueteria = db.relationship("Paquete", backref="edificio")
     gastos_comunes = db.relationship("GastoComun", backref="edificio")
     montos_totales = db.relationship("MontosTotales", backref="edificio")
-
+    boletines = db.relationship("Boletin", backref="edificio")
 
 
     def serialize(self):
@@ -449,13 +449,14 @@ class Boletin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     asunto = db.Column(db.String(120), nullable=False)
     body = db.Column(db.String(250), nullable=False)
-
+    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
 
     def serialize(self):
         return {
             "id": self.id,
             "asunto": self.asunto,
-            "body": self.body
+            "body": self.body,
+            "edificio_id": self.edificio_id
         }
     def save(self):
         db.session.add(self)
