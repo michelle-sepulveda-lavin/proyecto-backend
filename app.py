@@ -864,6 +864,10 @@ def get_avatar(avatar):
 def get_comprobante(comprobante):
     return send_from_directory(app.config['UPLOAD_FOLDER']+"/comprobantes", comprobante)
 
+@app.route("/pagosgastos/<pago>")
+def get_pago(pago):
+    return send_from_directory(app.config['UPLOAD_FOLDER']+"/pagos", pago)
+
 
 
 @app.route("/departamentoUsuarioEdificio/<id>", methods=['GET', 'POST', 'DELETE'])
@@ -1294,7 +1298,14 @@ def gastos_edificio(id, mes = None, year = None):
 def gastos_depto(edificio, depto):
      if request.method == 'GET':
 
-            gastodepto = GastoComun.query.filter_by(edificio_id=edificio, departamento_id=depto).order_by(GastoComun.year.desc(), GastoComun.month.desc()).all()
+            numero_id = DepartamentoUsuario.query.filter_by(numero_departamento=depto).first()
+            
+            if not numero_id:
+                return jsonify({"msg": "No existe el departamento"})
+
+            numero_depto = numero_id.id
+
+            gastodepto = GastoComun.query.filter_by(edificio_id=edificio, departamento_id=numero_depto).order_by(GastoComun.year.desc(), GastoComun.month.desc()).all()
             
             if not gastodepto:
                 return jsonify({"msg": "No hay gastos comunes para departamento"})
@@ -1306,7 +1317,7 @@ def gastos_depto(edificio, depto):
 @app.route("/gastoscomunes/depto/<int:edificio>/<int:depto>/<int:mes>/<int:year>", methods=['PATCH'])
 def estado_gasto(edificio, depto, mes, year):
 
-    estado = request.json.get("estado")
+    estado = request.form.get("estado")
     pago = request.files.get('pago')
 
     filename = "sin-pago.pdf"
@@ -1356,15 +1367,14 @@ def montos_totales(id, mes = None):
 
         return jsonify({"msg": "Monto total del edificio borrado"}), 200
 
-@app.route("/departamentoUsuario/<id>", methods=['GET'])
+@app.route("/infoDepartamentoUsuario/<id>", methods=['GET'])
 def depto_usuario(id):
-
     departamento_usuario = DepartamentoUsuario.query.filter_by(residente=id).first()
-            
     if not departamento_usuario:
-        return jsonify({"msg": "No existe departamento para este usuario"})
+        return jsonify({"msg": "No existe departamento para este usuario"}), 400
+        
+    return jsonify(departamento_usuario.serialize()), 200
 
-    return jsonify(departamento_usuario.serialize), 200
 
 if __name__ == "__main__":
     manager.run()
