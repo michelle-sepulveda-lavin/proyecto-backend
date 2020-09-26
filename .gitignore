@@ -218,3 +218,4 @@ dmypy.json
 config.py
 migrations/
 static/
+.vscode/
