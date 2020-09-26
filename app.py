@@ -1139,6 +1139,7 @@ def boletin(id = None):
     if request.method == 'POST':
         asunto = request.json.get("asunto", None)
         body = request.json.get("body", None)
+        edificio_id = request.json.get("edificio_id", None)
 
         if not asunto:
             return jsonify({"error": "Asunto es requerido"}), 400
@@ -1148,6 +1149,7 @@ def boletin(id = None):
         boletin = Boletin()
         boletin.asunto = asunto
         boletin.body = body
+        boletin.edificio_id = edificio_id
         boletin.save()
 
         return jsonify(boletin.serialize()), 201
