@@ -22,8 +22,12 @@ class User(db.Model):
                 "id": self.role.id,
                 "name": self.role.rol
                 },
-            "edificio": self.edificio_id
+            "edificio": {
+                "id": self.edificio.id,
+                "name": self.edificio.nombre_edificio,
+                } if self.edificio_id else {"id": self.edificio_id},
         }
+
 
 
     def serialize_con_edificio(self):
@@ -493,7 +497,7 @@ class Paquete(db.Model):
                 "residente": self.departamentoUsuario.residente,
                 "piso": self.departamentoUsuario.piso
             },
-            "estado": self.estado
+            "estado": self.estado,
             
         }
         

@@ -75,18 +75,20 @@ def register(id=None, rol_id=None):
         edificio_id = request.json.get("edificio_id", None)
 
         if not password:
-            return jsonify({"msg": "password is required"}), 400
+            return jsonify({"msg": "La contraseña es obligatoria"}), 400
         if not rol_id:
-            return jsonify({"msg": "rol_id is required"})
+            return jsonify({"msg": "Rol es obligatorio"})
         if not email:
-            return jsonify({"msg": "email is required"})
+            return jsonify({"msg": "Email es obligatorio"})
         if not username:
-            return jsonify({"msg": "username is required"}), 400
+            return jsonify({"msg": "Nombre usuario es obligatorio"}), 400
+        if not edificio_id:
+            return jsonify({"msg": "Edificio es obligatorio"}), 400
 
         user = User.query.filter_by(username=username).first()
 
         if user:
-            return jsonify({"msg": "user already exists"}), 400
+            return jsonify({"msg": "El usuario ya existe"}), 400
         
         rolId = Role.query.filter_by(id=rol_id).first()
         rol = Role.query.filter_by(rol=rol_id).first()
@@ -177,11 +179,11 @@ def register(id=None, rol_id=None):
 def recuperacion():
     email = request.json.get("email")
     if not email:
-        return jsonify({"msg": "email es requerido"}), 400
+        return jsonify({"msg": "El email es requerido"}), 400
     else:
         correo = User.query.filter_by(email=email).first()
         if not correo:
-            return jsonify({"msg": "email no existe"}), 404
+            return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 404
         else:
             sg = sendgrid.SendGridAPIClient(api_key="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")
             from_email = Email("edificios.felices.cl@gmail.com")
@@ -922,7 +924,7 @@ def departamentoUsuario_by_Edificio(id=None):
 @app.route("/usuarios-edificio/<id>", methods=['GET'])
 def usuarios_by_Edificio(id):
     if request.method == 'GET':
-        usuarios = User.query.filter_by(edificio_id=int(id)).all()
+        usuarios = User.query.filter_by(edificio_id=id).all()
         if not usuarios:
             return jsonify({"msg": "No existen usuarios en el edificio"}), 404
         if usuarios:
