@@ -1106,21 +1106,33 @@ def paqueteria(id):
 
 
 @app.route("/boletin", methods=['GET','POST'])
-@app.route("/boletin/<int:id>", methods=['GET', 'PUT', 'DELETE'])
-def boletin(id = None):
+@app.route("/boletin/<int:edificio>", methods=['GET', 'PATCH', 'PUT', 'DELETE'])
+@app.route("/boletin/<int:edificio>/<int:id>", methods=['GET', 'PATCH', 'PUT', 'DELETE'])
+def boletin(id = None, edificio = None):
     # asunto = request.json['asunto'],
     # body = request.json['body']
     if request.method == 'GET':
+        
+        if edificio:
+            boletines_edificio = Boletin.query.get(edificio_id=edificio)
+            if not boletines_edificio:
+                return jsonify({"msg": "boletin no encontrado"}), 400
+            else:
+                boletines_edi = list(map(lambda boletin: boletin.serialize(), boletines_edificio))
+                return jsonify(boletines_edi), 200
+
         if id is not None:
-            boletin = Boletin.query.get(id)
+            boletin = Boletin.query.get(edificio_id = edificio, id = id)
             if boletin:
                 return jsonify(boletin.serialize()), 200
             else:
-                return jsonify({"msg": "boletin no encontrado"}), 404
-        else:
-            boletines = Boletin.query.all()
-            boletines = list(map(lambda boletin: boletin.serialize(), boletines))
-            return jsonify(boletines), 200
+                return jsonify({"msg": "boletin no encontrado"}), 400
+                
+        
+        boletines = Boletin.query.all()
+        boletines = list(map(lambda boletin: boletin.serialize(), boletines))
+        return jsonify(boletines), 200
+        
 
     if request.method == 'POST':
         asunto = request.json.get("asunto", None)
@@ -1139,6 +1151,20 @@ def boletin(id = None):
         boletin.save()
 
         return jsonify(boletin.serialize()), 201
+
+    if request.method == 'PATCH':
+        boletin_estado = Boletin.query.filter_by(edificio_id = edificio, id=id).first()
+
+        estado = request.json.get("estado", None)
+               
+        if not boletin_estado:
+            return jsonify({"msg": "No existe ese boletin"})
+        
+        if type(estado) == bool:
+            boletin_estado.estado = estado
+            boletin_estado.update()
+
+        return jsonify({"Msg": "Estado boletin Actualizado"})
 
     # if request.method == 'PUT':
     #     asunto = request.json.get("asunto", None)
