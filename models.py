@@ -445,21 +445,22 @@ class MontosTotales(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-""" Boletines """
 
 class Boletin(db.Model):
     __tablename__ = "boletines"
     id = db.Column(db.Integer, primary_key=True)
     asunto = db.Column(db.String(120), nullable=False)
-    body = db.Column(db.String(250), nullable=False)
+    body = db.Column(db.Text, nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
+    estado = db.Column(db.Boolean, nullable=True, default=True)
 
     def serialize(self):
         return {
             "id": self.id,
             "asunto": self.asunto,
             "body": self.body,
-            "edificio_id": self.edificio_id
+            "edificio_id": self.edificio_id,
+            "estado": self.estado
         }
     def save(self):
         db.session.add(self)
@@ -471,7 +472,7 @@ class Boletin(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit() 
-""" Fin Boletines """
+
 
 class Paquete(db.Model):
     __tablename__ = "paqueteria"
