@@ -63,7 +63,7 @@ class Plan(db.Model):
     body = db.Column(db.Text, nullable=True, default=None)
     price = db.Column(db.Integer, nullable=False)
     frecuencia = db.Column(db.String(150), nullable=False)
-    edificios = db.relationship("Edificio", backref="plane")
+    edificios = db.relationship("Edificio", backref="plan")
     def serialize(self):
         return {
             "id": self.id,
@@ -185,7 +185,7 @@ class Edificio(db.Model):
             "termino_contrato": self.termino_contrato,
             "dia_vencimiento": self.dia_vencimiento,
             "plan_id": self.plan_id,
-            "archivoCSVv": self.archivoCSV
+            "plan_name": self.plan.name,
         }
     
     def save(self):
