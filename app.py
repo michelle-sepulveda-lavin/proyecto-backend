@@ -363,10 +363,10 @@ def plan_put(id):
 @app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT", "PATCH"])
 def info_Contacto(email=None):
     if request.method == 'GET':
-        contactos = InfoContacto.query.order_by(InfoContacto.id.asc()).all()
+        contactos = InfoContacto.query.all()
 
         if not contactos:
-            return jsonify({"msg": "empty list"}), 404
+            return jsonify({"msg": "empty list"}), 400
         else:
             info = list(map(lambda contacto: contacto.serialize(), contactos))
             return jsonify(info), 200
