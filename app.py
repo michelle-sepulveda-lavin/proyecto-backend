@@ -17,6 +17,8 @@ from libs.functions import allowed_file
 from io import TextIOWrapper
 import csv
 
+import time
+
 ALLOWED_EXTENSIONS_IMAGES = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_FILES = {'pdf', 'csv'}
 
@@ -77,13 +79,14 @@ def register(id=None, rol_id=None):
         if not password:
             return jsonify({"msg": "La contraseña es obligatoria"}), 400
         if not rol_id:
-            return jsonify({"msg": "Rol es obligatorio"})
+            return jsonify({"msg": "Rol es obligatorio"}), 400
         if not email:
-            return jsonify({"msg": "Email es obligatorio"})
+            return jsonify({"msg": "Email es obligatorio"}), 400
         if not username:
             return jsonify({"msg": "Nombre usuario es obligatorio"}), 400
         if not edificio_id:
             return jsonify({"msg": "Edificio es obligatorio"}), 400
+
 
         user = User.query.filter_by(username=username).first()
 
@@ -94,20 +97,36 @@ def register(id=None, rol_id=None):
         rol = Role.query.filter_by(rol=rol_id).first()
 
         if rolId:
-            user = User()
-            user.username = username
-            user.password = generate_password_hash(password)
-            user.rol_id = rol_id
-            user.edificio_id = edificio_id
-            user.email = email
-            user.save()
+            if edificio_id == "default":
+                user = User()
+                user.username = username
+                user.password = generate_password_hash(password)
+                user.rol_id = rol_id
+                user.edificio_id = None
+                user.email = email
+                user.save()
 
-            expire_in = datetime.timedelta(days=1)
-            data = {
-                "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
-                "user": user.serialize()
-            }
-            return jsonify(data), 200
+                expire_in = datetime.timedelta(days=1)
+                data = {
+                    "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+                    "user": user.serialize()
+                }
+                return jsonify(data), 200
+            else:
+                user = User()
+                user.username = username
+                user.password = generate_password_hash(password)
+                user.rol_id = rol_id
+                user.edificio_id = edificio_id
+                user.email = email
+                user.save()
+
+                expire_in = datetime.timedelta(days=1)
+                data = {
+                    "access_token": create_access_token(identity=user.email, expires_delta=expire_in),
+                    "user": user.serialize()
+                }
+                return jsonify(data), 200
         if rol:
             roleID = rol.id
 
@@ -289,14 +308,15 @@ def roles(id=None):
 
 @app.route("/api/planes", methods=['GET'])
 def get_planes():
+    
+
     planes = Plan.query.all()
-    if len(planes) > 0:
+    if planes:
         return_plan = list(map(lambda plan: plan.serialize(), planes))
         return jsonify(return_plan)
     else:
         return jsonify({"msg": "No hay planes, por favor hacer método POST"})
     
-    return return_plan
 
 @app.route("/api/planes", methods=['POST'])  
 def plan_post():
@@ -365,7 +385,6 @@ def plan_put(id):
 def info_Contacto(email=None):
     if request.method == 'GET':
         contactos = InfoContacto.query.order_by(InfoContacto.id.asc()).all()
-
         if not contactos:
             return jsonify({"msg": "empty list"}), 404
         else:
@@ -440,12 +459,14 @@ def get_last_contacts(id):
 @app.route("/crearedificio", methods=['POST', 'GET'])
 def crearEdificio(id=None):
     if request.method == 'GET':
-        edificios = Edificio.query.all()
+        edificios = Edificio.query.all()  
+
         if not edificios:
-            return jsonify({"msg": "No hay edificios, usar metodo POST"}), 200
+            return jsonify({"msg": "No hay edificios, usar metodo POST"}), 404
         else:
             edificios = list(map(lambda edificio: edificio.serialize(), edificios))
             return jsonify(edificios), 200
+            
     if request.method == 'POST':
         nombre_edificio = request.form.get("nombre_edificio")
         direccion = request.form.get("direccion")
@@ -941,6 +962,11 @@ def add_user_to_building(id):
         residente = request.json.get("residente")
         estado = request.json.get("estado")
 
+        if not residente:
+            return jsonify({"msg": "Elegir residente"})
+        if not estado:
+            return jsonify({"msg": "Elegir estado"})
+
         if residente == "default":
             departamento.residente = None
             departamento.estado = estado
@@ -1398,6 +1424,15 @@ def dpto_usuario_paqueteria(id):
     else:
         paquetes = list(map(lambda paquete: paquete.serialize(), paquetes))
         return jsonify(paquetes), 200
+
+@app.route("/admnistradorEdificio/<id>", methods=['GET'])
+def adm_del_edificio(id):
+    administrador = User.query.filter_by(edificio_id=id, rol_id="2").first()
+
+    if not administrador:
+        return jsonify({"msg": "No hay administrador"}), 400
+    else:
+        return jsonify(administrador.serialize()), 200
 
 if __name__ == "__main__":
     manager.run()
