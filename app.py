@@ -1192,21 +1192,21 @@ def boletin(id = None, edificio = None):
 
         return jsonify({"Msg": "Estado boletin Actualizado"})
 
-    # if request.method == 'PUT':
-    #     asunto = request.json.get("asunto", None)
-    #     body = request.json.get("body", None)
+    if request.method == 'PUT':
+        asunto = request.json.get("asunto", None)
+        body = request.json.get("body", None)
 
-    #     if not asunto:
-    #         return jsonify({"error": "Asunto es requerido"}), 400
-    #     if not body:
-    #         return jsonify({"error": "Body es requerido"}), 400
+        if not asunto:
+            return jsonify({"error": "Asunto es requerido"}), 400
+        if not body:
+            return jsonify({"error": "Body es requerido"}), 400
 
-    #     boletin = Boletin()
-    #     boletin.asunto = asunto
-    #     boletin.body = body
-    #     boletin.update()
+        boletin = Boletin()
+        boletin.asunto = asunto
+        boletin.body = body
+        boletin.update()
 
-    #     return jsonify(boletin.serialize()), 201
+        return jsonify({"msg": "Boletin Actualizado"}), 201
 
     # if request.method == 'DELETE':
     #     boletin = Boletin.query.get(id)
@@ -1433,6 +1433,34 @@ def adm_del_edificio(id):
         return jsonify({"msg": "No hay administrador"}), 400
     else:
         return jsonify(administrador.serialize()), 200
+@app.route("/correo-gastos/<int:id>", methods=['POST'])
+def gastos_correo(id):
+    monto = request.json.get("monto")
+
+    if not monto:
+        return jsonify({"msg": "El monto es requerido"}), 400
+    
+    usuario = User.query.filter_by(id=id).first()
+    
+    if not usuario:
+        return jsonify({"msg": "Este departamento no tiene cuenta registrada"}), 400
+    else:
+        sg = sendgrid.SendGridAPIClient(api_key="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")
+        from_email = Email("edificios.felices.cl@gmail.com")
+        to_email = To(usuario.email)
+        subject = "Gastos Comunes"
+        mensaje2 = f"Tienes un gasto común pendiente de pago con un monto de \"{monto}\", por favor acceder a la plataforma de "
+        url = "http://localhost:3000/login"
+        mensaje = f"<html><head></head><body>Tienes un gasto común pendiente de pago con un monto de {monto}, por favor acceder a la plataforma de <a href=\"{url}\">Edificios Felices</a> para pagar </body></html>"
+        content = Content("text/html", mensaje)
+        mail = Mail(from_email, to_email, subject, content)
+        response = sg.client.mail.send.post(request_body=mail.get())
+        return jsonify({"msg": "Se ha enviado un email con el monto a pagar"}), 200
+
+
+
+
+
 
 if __name__ == "__main__":
     manager.run()
