@@ -892,7 +892,8 @@ def departamentoUsuario_by_Edificio(id=None):
         else:
             numero_departamento = request.json.get("numero_departamento")
             estado = request.json.get("estado")  
-            residente = request.json.get("residente")  
+            residente = request.json.get("residente")
+            propietario = request.json.get("propietario")  
             bodega_id = request.json.get("bodega_id")  
             estacionamiento_id = request.json.get("estacionamiento_id")  
             piso = request.json.get("piso")  
@@ -924,6 +925,7 @@ def departamentoUsuario_by_Edificio(id=None):
                 departamento.numero_departamento = numero_departamento
                 departamento.estado = estado
                 departamento.residente = residente
+                departamento.propietario = propietario
                 departamento.bodega_id = bodega_id
                 departamento.estacionamiento_id = estacionamiento_id
                 departamento.piso = piso
@@ -1015,7 +1017,7 @@ def add_bodega(id):
         new_bodega.edificio_id = id
         new_bodega.save()
 
-        return jsonify({"msg": "La bodega creada exitosamente"}), 404
+        return jsonify({"msg": "La bodega creada exitosamente"}), 200
 
 @app.route("/add-estacionamiento/<id>", methods=['POST'])
 def add_estacionamiento(id):
@@ -1038,7 +1040,7 @@ def add_estacionamiento(id):
         new_estacionamiento.edificio_id = id
         new_estacionamiento.save()
 
-        return jsonify({"msg": "El estacionamiento creada exitosamente"}), 404
+        return jsonify({"msg": "El estacionamiento creada exitosamente"}), 200
 
 @app.route("/estacionamientos/<id>", methods=['GET'])
 def estacionamiento(id):
@@ -1341,14 +1343,14 @@ def gastos_depto(edificio, depto):
             numero_id = DepartamentoUsuario.query.filter_by(numero_departamento=depto).first()
             
             if not numero_id:
-                return jsonify({"msg": "No existe el departamento"})
+                return jsonify({"msg": "No existe el departamento"}), 404
 
             numero_depto = numero_id.id
 
             gastodepto = GastoComun.query.filter_by(edificio_id=edificio, departamento_id=numero_depto).order_by(GastoComun.year.desc(), GastoComun.month.desc()).all()
             
             if not gastodepto:
-                return jsonify({"msg": "No hay gastos comunes para departamento"})
+                return jsonify({"msg": "No hay gastos comunes para departamento"}), 404
         
             gastosdeldepto = list(map(lambda gastocomun: gastocomun.serialize(), gastodepto))
 

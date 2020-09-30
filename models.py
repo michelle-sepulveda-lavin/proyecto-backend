@@ -10,7 +10,8 @@ class User(db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=True)
-    departamentosUsuarios = db.relationship("DepartamentoUsuario", backref="user")
+    departamentosUsuarios = db.relationship("DepartamentoUsuario", foreign_keys="DepartamentoUsuario.residente", backref='users')
+    departamentosUsuarios = db.relationship("DepartamentoUsuario", foreign_keys="DepartamentoUsuario.propietario", backref="users")
     conserje = db.relationship("Conserje", backref="users")
 
     def serialize(self):
@@ -281,6 +282,7 @@ class DepartamentoUsuario(db.Model):
     numero_departamento = db.Column(db.String(120), nullable=False)
     estado = db.Column(db.String(120), nullable=False)    
     residente = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    propietario = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     bodega_id = db.Column(db.Integer, nullable=True, unique=True) 
     estacionamiento_id = db.Column(db.Integer, nullable=True, unique=True)
     piso = db.Column(db.Integer, nullable=True)
@@ -290,16 +292,14 @@ class DepartamentoUsuario(db.Model):
     montos_totales = db.relationship("MontosTotales", backref="departamentosusuarios")
     paqueteria = db.relationship("Paquete", backref="departamentoUsuario") 
 
+
     def serialize(self):
         return{
             "id": self.id,
             "numero_departamento": self.numero_departamento,
             "estado": self.estado,
-            "residente": {
-                "id": self.user.id,
-                "name": self.user.username,
-                "email": self.user.email
-            } if self.residente else {"id": self.residente},
+            "residente": self.residente,
+            "propietario": self.propietario,
             "bodega_id": self.bodega_id,
             "estacionamiento_id": self.estacionamiento_id,
             "piso": self.piso,
