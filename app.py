@@ -313,9 +313,9 @@ def get_planes():
     planes = Plan.query.all()
     if planes:
         return_plan = list(map(lambda plan: plan.serialize(), planes))
-        return jsonify(return_plan)
+        return jsonify(return_plan), 200
     else:
-        return jsonify({"msg": "No hay planes, por favor hacer método POST"})
+        return jsonify({"msg": "No hay planes, por favor hacer método POST"}), 400
     
 
 @app.route("/api/planes", methods=['POST'])  
@@ -344,7 +344,7 @@ def plan_post():
     plan.price = plan_price
     plan.frecuencia = plan_frecuencia
     plan.save()
-    return jsonify({"Msg": "Plan Añadido"})
+    return jsonify({"Msg": "Plan Añadido"}), 200
 
 @app.route("/api/planes/<int:id>", methods=['DELETE'])  
 def plan_delete(id):
@@ -353,7 +353,7 @@ def plan_delete(id):
         return jsonify({"msg": "Este plan no existe"}), 404
     else:
         plan.delete()
-        return jsonify({"msg": "Plan borrado"})
+        return jsonify({"msg": "Plan borrado"}), 200
 
 @app.route("/api/planes/<int:id>", methods=['PUT'])  
 def plan_put(id):
@@ -370,7 +370,7 @@ def plan_put(id):
         if type(plan_body) == list:
             plan.body = json.dumps(plan_body)
         else:
-            return jsonify({"Msg": "El body debe ser un array"})
+            return jsonify({"Msg": "El body debe ser un array"}), 400
     if plan_price:
         plan.price = plan_price
     if plan_frecuencia:
@@ -378,7 +378,7 @@ def plan_put(id):
     
     plan.update()
 
-    return jsonify({"Msg": "Plan Actualizado"})
+    return jsonify({"Msg": "Plan Actualizado"}),200
 
 @app.route("/api/info-contacto", methods=['POST', 'GET'])
 @app.route("/api/info-contacto/<email>", methods=['DELETE', "PUT", "PATCH"])
@@ -418,15 +418,15 @@ def info_Contacto(email=None):
             contacto.plan = contact_plan
             contacto.save()
 
-        return jsonify({"Msg": "Contacto Añadido"})
+        return jsonify({"Msg": "Contacto Añadido"}),200
 
     if request.method == 'DELETE':
         contacto_existente = InfoContacto.query.filter(InfoContacto.email==email).first()
         if contacto_existente:
             contacto_existente.delete()
-            return jsonify({"msg": "Plan borrado"})
+            return jsonify({"msg": "Plan borrado"}),200
         else:
-            return jsonify({"msg": "Contacto no existe"})
+            return jsonify({"msg": "Contacto no existe"}),400
 
     if request.method == 'PATCH':
         contact = InfoContacto.query.filter(InfoContacto.email==email).first()
@@ -435,23 +435,23 @@ def info_Contacto(email=None):
 
         if not contact:
             print(type(contact_state))
-            return jsonify({"msg": "No existe ese email"})
+            return jsonify({"msg": "No existe ese email"}),400
         
         if type(contact_state) == bool:
             contact.state = contact_state
             contact.update()
-            return jsonify({"Msg": "Plan Actualizado"})
+            return jsonify({"Msg": "Plan Actualizado"}),200
         else:
-            return jsonify({"msg": "El state debe ser True o False"})
+            return jsonify({"msg": "El state debe ser True o False"}),400
 
 @app.route("/api/info-contacto/<int:id>", methods=['GET'])
 def get_last_contacts(id):
     contact = InfoContacto.query.order_by(InfoContacto.id.desc()).limit(id).all()
     contacts = list(map(lambda contacto: contacto.serialize(), contact))
     if len(contacts) > 0:
-        return jsonify(contacts)
+        return jsonify(contacts),200
     else:
-        return jsonify({"msg": "No hay planes, por favor hacer método POST"})
+        return jsonify({"msg": "No hay planes, por favor hacer método POST"}),400
         
 
    
@@ -572,31 +572,31 @@ def crearEdificio(id=None):
             """ username_id = request.json.get("username_id") """
 
             if not nombre_edificio:
-                return ({"msg": "nombre_edificio es requerido"})
+                return ({"msg": "nombre_edificio es requerido"}), 400
             """ if not nombre_administrador:
                 return ({"msg": "nombre_administrador es requerido"}) """
             if not direccion:
-                return ({"msg": "direccion es requerido"})
+                return ({"msg": "direccion es requerido"}), 400
             if not telefono:
-                return ({"msg": "telefono es requerido"})
+                return ({"msg": "telefono es requerido"}), 400
             if not correo:
-                return ({"msg": "correo es requerido"})
+                return ({"msg": "correo es requerido"}), 400
             if not numero_pisos:
-                return ({"msg": "numero_pisos es requerido"})
+                return ({"msg": "numero_pisos es requerido"}), 400
             if not numero_departamentos:
-                return ({"msg": "numero_departamentos es requerido"})
+                return ({"msg": "numero_departamentos es requerido"}), 400
             if not total_bodegas:
-                return ({"msg": "total_bodegas es requerido"})
+                return ({"msg": "total_bodegas es requerido"}), 400
             if not total_estacionamientos:
-                return ({"msg": "total_estacionamientos es requerido"})
+                return ({"msg": "total_estacionamientos es requerido"}), 400
             if not inicio_contratacion:
-                return ({"msg": "inicio_contratacion es requerido"})
+                return ({"msg": "inicio_contratacion es requerido"}), 400
             if not termino_contrato:
-                return ({"msg": "termino_contrato es requerido"})
+                return ({"msg": "termino_contrato es requerido"}), 400
             if not dia_vencimiento:
-                return ({"msg": "dia_vencimiento es requerido"})
+                return ({"msg": "dia_vencimiento es requerido"}), 400
             if not plan_id:
-                return ({"msg": "plan_id es requerido"})
+                return ({"msg": "plan_id es requerido"}), 400
             """ if not username_id:
                 return ({"msg": "username_id es requerido"}) """
         
@@ -635,8 +635,8 @@ def crearConserje(id=None):
         if id:
             conserje = Conserje.query.filter_by(id=id).first()
             if not conserje:
-                return jsonify({"msg": "Conserje no existe"})
-            return jsonify(conserje.serialize())
+                return jsonify({"msg": "Conserje no existe"}), 400
+            return jsonify(conserje.serialize()), 200
 
         conserjes = Conserje.query.all()
         if not conserjes:
@@ -724,9 +724,9 @@ def crearConserje(id=None):
     if request.method == 'DELETE':
         conserje = Conserje.query.filter_by(id=id).first()
         if not conserje:
-            return jsonify({"msg": "Conserje no existe"})
+            return jsonify({"msg": "Conserje no existe"}), 400
         conserje.delete()
-        return jsonify({"msg": "conserje borrado"})
+        return jsonify({"msg": "conserje borrado"}), 200
 
 
     if request.method == 'PATCH':
@@ -739,7 +739,7 @@ def crearConserje(id=None):
 
         
         if not conserje:
-            return jsonify({"msg": "No existe ese conserje"})
+            return jsonify({"msg": "No existe ese conserje"}), 400
         
         if nombre:
             conserje.nombre = nombre
@@ -758,7 +758,7 @@ def crearConserje(id=None):
                 conserje.avatar = filename
                 conserje.update()
         
-        return jsonify({"Msg": "Conserje Actualizado"})
+        return jsonify({"Msg": "Conserje Actualizado"}), 200
  
         
 @app.route("/conserjes/edificio/<int:id>", methods=['POST', 'GET', 'DELETE', 'PUT'])
@@ -766,22 +766,22 @@ def conserjes_edificio(id):
     if request.method == 'GET':
         conserjes = Conserje.query.filter_by(edificio_id=id)
         if not conserjes:
-            return jsonify({"msg": "No hay conserjes en este edificio"})
+            return jsonify({"msg": "No hay conserjes en este edificio"}), 400
         conserje = list(map(lambda cons: cons.serialize(), conserjes))
-        return jsonify(conserje)
+        return jsonify(conserje), 200
     
 @app.route("/conserjes/estado-conserje/<int:id>", methods=['PATCH'])
 def conserjes_estado(id):
     conserje = Conserje.query.filter_by(id=id).first()
     estado_conserje = request.json.get("estado_conserje", None)
     if not conserje:
-        return jsonify({"msg": "No existe ese conserje"})
+        return jsonify({"msg": "No existe ese conserje"}), 400
 
     if type(estado_conserje) == bool:
         conserje.state = estado_conserje
         conserje.update()
 
-    return jsonify({"Msg": "Estado conserje Actualizado"})
+    return jsonify({"Msg": "Estado conserje Actualizado"}), 200
 
 @app.route("/info-departamento/<id>", methods=['POST', 'GET', 'DELETE'])
 def departamento_by_id(id):
@@ -792,7 +792,7 @@ def departamento_by_id(id):
             return jsonify({"msg": "No hay departamentos, usar metodo POST"}), 404
         if departamentos:
             departamentos = list(map(lambda depto: depto.serialize(), departamentos))
-            return jsonify((departamentos))
+            return jsonify((departamentos)), 200
 
     if request.method == 'POST':
         edificio = Edificio.query.filter_by(id=id).first()
@@ -861,15 +861,24 @@ def departamentoUsuario(id=None):
         
 @app.route("/avatares/<avatar>")
 def get_avatar(avatar):
-    return send_from_directory(app.config['UPLOAD_FOLDER']+"/avatares", avatar)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'] + "/avatares", avatar)
+    except FileNotFoundError:
+        abort(404)
 
 @app.route("/comprobantes/<comprobante>")
 def get_comprobante(comprobante):
-    return send_from_directory(app.config['UPLOAD_FOLDER']+"/comprobantes", comprobante)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'] + "/comprobantes", comprobante, as_attachment=False)
+    except FileNotFoundError:
+        abort(404)
 
 @app.route("/pagosgastos/<pago>")
 def get_pago(pago):
-    return send_from_directory(app.config['UPLOAD_FOLDER']+"/pagos", pago)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'] + "/pagos", pago)
+    except FileNotFoundError:
+        abort(404)
 
 
 
@@ -950,7 +959,7 @@ def usuarios_by_Edificio(id):
             return jsonify({"msg": "No existen usuarios en el edificio"}), 404
         if usuarios:
             usuarios = list(map(lambda usuario: usuario.serialize(), usuarios))
-            return jsonify(usuarios)
+            return jsonify(usuarios), 200
 
 @app.route("/add-residente/<id>", methods=['PUT'])
 def add_user_to_building(id):
@@ -963,9 +972,9 @@ def add_user_to_building(id):
         estado = request.json.get("estado")
 
         if not residente:
-            return jsonify({"msg": "Elegir residente"})
+            return jsonify({"msg": "Elegir residente"}), 400
         if not estado:
-            return jsonify({"msg": "Elegir estado"})
+            return jsonify({"msg": "Elegir estado"}), 400
 
         if residente == "default":
             departamento.residente = None
@@ -1184,13 +1193,13 @@ def boletin(id = None, edificio = None):
         estado = request.json.get("estado", None)
                
         if not boletin_estado:
-            return jsonify({"msg": "No existe ese boletin"})
+            return jsonify({"msg": "No existe ese boletin"}), 400
         
         if type(estado) == bool:
             boletin_estado.estado = estado
             boletin_estado.update()
 
-        return jsonify({"Msg": "Estado boletin Actualizado"})
+        return jsonify({"Msg": "Estado boletin Actualizado"}), 200
 
     if request.method == 'PUT':
         asunto = request.json.get("asunto", None)
@@ -1206,7 +1215,7 @@ def boletin(id = None, edificio = None):
         boletin.body = body
         boletin.update()
 
-        return jsonify({"msg": "Boletin Actualizado"}), 201
+        return jsonify({"msg": "Boletin Actualizado"}), 200
 
     # if request.method == 'DELETE':
     #     boletin = Boletin.query.get(id)
@@ -1296,7 +1305,7 @@ def gastos_edificio(id, mes = None, year = None):
             gastomesyear = GastoComun.query.filter_by(edificio_id=id, month=mes, year=year).all()
             
             if not gastomesyear:
-                return jsonify({"msg": "No hay gastos comunes para este mes y año"})
+                return jsonify({"msg": "No hay gastos comunes para este mes y año"}), 400
         
             gastosmesyear = list(map(lambda gastocomun: gastocomun.serialize(), gastomesyear))
 
@@ -1307,7 +1316,7 @@ def gastos_edificio(id, mes = None, year = None):
             gastomes = GastoComun.query.filter_by(edificio_id=id, month=mes).all()
             
             if not gastomes:
-                return jsonify({"msg": "No hay gastos comunes para este edificio o mes"})
+                return jsonify({"msg": "No hay gastos comunes para este edificio o mes"}), 400 
         
             gastosmes = list(map(lambda gastocomun: gastocomun.serialize(), gastomes))
 
@@ -1316,7 +1325,7 @@ def gastos_edificio(id, mes = None, year = None):
         gasto = GastoComun.query.filter_by(edificio_id=id).all()
         
         if not gasto:
-            return jsonify({"msg": "no hay gastos comunes para este edificio"})
+            return jsonify({"msg": "no hay gastos comunes para este edificio"}), 400
         
         gastos = list(map(lambda gastocomun: gastocomun.serialize(), gasto))
     
@@ -1327,7 +1336,7 @@ def gastos_edificio(id, mes = None, year = None):
         gasto = GastoComun.query.filter_by(edificio_id=id).first()
                 
         if not gasto:
-            return jsonify({"msg": "no hay gastos comunes para este edificio"})
+            return jsonify({"msg": "no hay gastos comunes para este edificio"}), 400
                 
         gasto.delete()
 
@@ -1341,14 +1350,14 @@ def gastos_depto(edificio, depto):
             numero_id = DepartamentoUsuario.query.filter_by(numero_departamento=depto).first()
             
             if not numero_id:
-                return jsonify({"msg": "No existe el departamento"})
+                return jsonify({"msg": "No existe el departamento"}), 400
 
             numero_depto = numero_id.id
 
             gastodepto = GastoComun.query.filter_by(edificio_id=edificio, departamento_id=numero_depto).order_by(GastoComun.year.desc(), GastoComun.month.desc()).all()
             
             if not gastodepto:
-                return jsonify({"msg": "No hay gastos comunes para departamento"})
+                return jsonify({"msg": "No hay gastos comunes para departamento"}), 400
         
             gastosdeldepto = list(map(lambda gastocomun: gastocomun.serialize(), gastodepto))
 
@@ -1368,7 +1377,7 @@ def estado_gasto(edificio, depto, mes, year):
     gasto_comun = GastoComun.query.filter_by(edificio_id=edificio, departamento_id=depto, month=mes, year=year).first()
         
     if not gasto_comun:
-        return jsonify({"msg": "No existe ese gasto común"})
+        return jsonify({"msg": "No existe ese gasto común"}), 400
     
     if estado:
         gasto_comun.estado = estado
@@ -1377,7 +1386,7 @@ def estado_gasto(edificio, depto, mes, year):
         gasto_comun.pago = filename
         gasto_comun.update()
          
-    return jsonify({"Msg": "Gasto común actualizado"})
+    return jsonify({"Msg": "Gasto común actualizado"}), 200
  
 
 
@@ -1390,7 +1399,7 @@ def montos_totales(id, mes = None):
         monto_total = MontosTotales.query.filter_by(edificio_id=id).order_by(MontosTotales.year.desc(), MontosTotales.month.desc()).all()
             
         if not monto_total:
-            return jsonify({"msg": "No hay montos totales para este edificio"})
+            return jsonify({"msg": "No hay montos totales para este edificio"}), 400
         
         montos = monto_total = list(map(lambda monto: monto.serialize(), monto_total))
 
@@ -1401,7 +1410,7 @@ def montos_totales(id, mes = None):
         montos = MontosTotales.query.filter_by(edificio_id=id, month= mes).first()
                 
         if not montos:
-            return jsonify({"msg": "no hay montos para este edificio"})
+            return jsonify({"msg": "no hay montos para este edificio"}), 400
                 
         montos.delete()
 
@@ -1420,7 +1429,7 @@ def dpto_usuario_paqueteria(id):
     paquetes = Paquete.query.filter_by(departamento_id=id, estado=False).all()
 
     if not paquetes:
-        return jsonify({"msg": "no existen paquetes para este edificio"})
+        return jsonify({"msg": "no existen paquetes para este edificio"}), 400
     else:
         paquetes = list(map(lambda paquete: paquete.serialize(), paquetes))
         return jsonify(paquetes), 200
