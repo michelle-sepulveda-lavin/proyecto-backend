@@ -1479,12 +1479,76 @@ def adm_del_edificio(id):
     else:
         return jsonify(administrador.serialize()), 200
 
-@app.route("/correo-gastos/<int:id>", methods=['POST'])
-def gastos_correo(id):
+@app.route("/correo-gastos/<id>/<propietario>", methods=['POST'])
+def gastos_correo(id, propietario):
     monto = request.json.get("monto")
 
     if not monto:
         return jsonify({"msg": "El monto es requerido"}), 400
+    
+    if id == "prueba":
+
+        propietario_id = User.query.filter_by(id=propietario).first()
+
+        if not propietario_id:
+            return jsonify({"msg": "Este departamento no tiene propietario"}), 400
+        else:
+            sg = sendgrid.SendGridAPIClient(api_key="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")
+            from_email = Email("edificios.felices.cl@gmail.com")
+            to_email = To(propietario_id.email)
+            subject = "Gastos Comunes"
+            mensaje2 = f"Tienes un gasto común pendiente de pago con un monto de \"{monto}\", por favor acceder a la plataforma de "
+            url = "http://localhost:3000/login"
+            mensaje = f"<html><head></head><body>Tienes un gasto común pendiente de pago con un monto de {monto}, por favor acceder a la plataforma de <a href=\"{url}\">Edificios Felices</a> para pagar </body></html>"
+            content = Content("text/html", mensaje)
+            mail = Mail(from_email, to_email, subject, content)
+            response = sg.client.mail.send.post(request_body=mail.get())
+            return jsonify({"msg": "Se ha enviado un email con el monto a pagar"}), 200
+   
+    else:
+
+        usuario = User.query.filter_by(id=id).first()
+        if not usuario:
+            return jsonify({"msg": "Este departamento no tiene cuenta registrada"}), 400
+        else:
+            sg = sendgrid.SendGridAPIClient(api_key="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")
+            from_email = Email("edificios.felices.cl@gmail.com")
+            to_email = To(usuario.email)
+            subject = "Gastos Comunes"
+            mensaje2 = f"Tienes un gasto común pendiente de pago con un monto de \"{monto}\", por favor acceder a la plataforma de "
+            url = "http://localhost:3000/login"
+            mensaje = f"<html><head></head><body>Tienes un gasto común pendiente de pago con un monto de {monto}, por favor acceder a la plataforma de <a href=\"{url}\">Edificios Felices</a> para pagar </body></html>"
+            content = Content("text/html", mensaje)
+            mail = Mail(from_email, to_email, subject, content)
+            response = sg.client.mail.send.post(request_body=mail.get())
+            return jsonify({"msg": "Se ha enviado un email con el monto a pagar"}), 200
+
+
+@app.route("/usuarios/edificio/<int:id>", methods=['GET'])
+def get_usuarios_edificio(id):
+    
+    usuarios = User.query.filter_by(edificio_id=id)
+    if usuarios:
+        return_usuario = list(map(lambda usuario: usuario.serialize(), usuarios))
+        return jsonify(return_usuario), 200
+    else:
+        return jsonify({"msg": "No hay usuarios en este edificio"}), 400
+    
+
+@app.route("/correo-boletin/<id>", methods=['POST'])
+def boletin_correo(id):
+
+    body = request.json.get("body")
+    asunto = request.json.get("asunto")
+    edificio = request.json.get("edificio")
+
+
+    if not body:
+        return jsonify({"msg": "El body es requerido"}), 400
+    if not asunto:
+        return jsonify({"msg": "El asunto es requerido"}), 400
+    if not edificio:
+        return jsonify({"msg": "El nombre del edificio es requerido"}), 400
     
     usuario = User.query.filter_by(id=id).first()
     
@@ -1494,14 +1558,14 @@ def gastos_correo(id):
         sg = sendgrid.SendGridAPIClient(api_key="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")
         from_email = Email("edificios.felices.cl@gmail.com")
         to_email = To(usuario.email)
-        subject = "Gastos Comunes"
-        mensaje2 = f"Tienes un gasto común pendiente de pago con un monto de \"{monto}\", por favor acceder a la plataforma de "
+        subject = f"{asunto} - {edificio}"
+        mensaje2 = f"Boletin Informativo {edificio} "
         url = "http://localhost:3000/login"
-        mensaje = f"<html><head></head><body>Tienes un gasto común pendiente de pago con un monto de {monto}, por favor acceder a la plataforma de <a href=\"{url}\">Edificios Felices</a> para pagar </body></html>"
+        mensaje = f"<html><head></head><body> {body} </body></html>"
         content = Content("text/html", mensaje)
         mail = Mail(from_email, to_email, subject, content)
         response = sg.client.mail.send.post(request_body=mail.get())
-        return jsonify({"msg": "Se ha enviado un email con el monto a pagar"}), 200
+        return jsonify({"msg": "Se ha enviado un email con el boletín"}), 200
 
 
 @app.route("/infoDepartamentoEspecifico/<id>", methods=['GET'])
@@ -1513,7 +1577,6 @@ def dpto_especifico(id):
     else:
         return jsonify(departamento.serialize()), 200
         
-
 
 
 if __name__ == "__main__":
