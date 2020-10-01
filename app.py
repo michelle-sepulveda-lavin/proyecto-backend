@@ -204,8 +204,8 @@ def recuperacion():
         if not correo:
             return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 404
         else:
-            sg = sendgrid.SendGridAPIClient(api_key="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")
-            from_email = Email("edificios.felices.cl@gmail.com")
+            sg = sendgrid.SendGridAPIClient(api_key="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")
+            from_email = Email("edificios.felices2020@gmail.com")
             to_email = To("edificios.felices.cl@gmail.com")
             subject = "Email Recuperacion"
             expire_in = datetime.timedelta(hours=1)
@@ -1180,7 +1180,7 @@ def boletin(id = None, edificio = None):
     if request.method == 'GET':
         
         if edificio:
-            boletines_edificio = Boletin.query.get(edificio_id=edificio)
+            boletines_edificio = Boletin.query.filter_by(edificio_id=edificio)
             if not boletines_edificio:
                 return jsonify({"msg": "boletin no encontrado"}), 400
             else:
@@ -1493,8 +1493,8 @@ def gastos_correo(id, propietario):
         if not propietario_id:
             return jsonify({"msg": "Este departamento no tiene propietario"}), 400
         else:
-            sg = sendgrid.SendGridAPIClient(api_key="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")
-            from_email = Email("edificios.felices.cl@gmail.com")
+            sg = sendgrid.SendGridAPIClient(api_key="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")
+            from_email = Email("edificios.felices2020@gmail.com")
             to_email = To(propietario_id.email)
             subject = "Gastos Comunes"
             mensaje2 = f"Tienes un gasto común pendiente de pago con un monto de \"{monto}\", por favor acceder a la plataforma de "
@@ -1511,8 +1511,8 @@ def gastos_correo(id, propietario):
         if not usuario:
             return jsonify({"msg": "Este departamento no tiene cuenta registrada"}), 400
         else:
-            sg = sendgrid.SendGridAPIClient(api_key="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")
-            from_email = Email("edificios.felices.cl@gmail.com")
+            sg = sendgrid.SendGridAPIClient(api_key="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")
+            from_email = Email("edificios.felices2020@gmail.com")
             to_email = To(usuario.email)
             subject = "Gastos Comunes"
             mensaje2 = f"Tienes un gasto común pendiente de pago con un monto de \"{monto}\", por favor acceder a la plataforma de "
@@ -1527,7 +1527,7 @@ def gastos_correo(id, propietario):
 @app.route("/usuarios/edificio/<int:id>", methods=['GET'])
 def get_usuarios_edificio(id):
     
-    usuarios = User.query.filter_by(edificio_id=id)
+    usuarios = User.query.filter_by(edificio_id=id).all()
     if usuarios:
         return_usuario = list(map(lambda usuario: usuario.serialize(), usuarios))
         return jsonify(return_usuario), 200
@@ -1551,12 +1551,12 @@ def boletin_correo(id):
         return jsonify({"msg": "El nombre del edificio es requerido"}), 400
     
     usuario = User.query.filter_by(id=id).first()
-    
+
     if not usuario:
         return jsonify({"msg": "Este departamento no tiene cuenta registrada"}), 400
     else:
-        sg = sendgrid.SendGridAPIClient(api_key="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")
-        from_email = Email("edificios.felices.cl@gmail.com")
+        sg = sendgrid.SendGridAPIClient(api_key="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")
+        from_email = Email("edificios.felices2020@gmail.com")
         to_email = To(usuario.email)
         subject = f"{asunto} - {edificio}"
         mensaje2 = f"Boletin Informativo {edificio} "
