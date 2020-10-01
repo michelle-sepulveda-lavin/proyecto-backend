@@ -972,6 +972,7 @@ def add_user_to_building(id):
     if departamento:
         residente = request.json.get("residente")
         estado = request.json.get("estado")
+        propietario = request.json.get("propietario")
 
         if not residente:
             return jsonify({"msg": "Elegir residente"}), 400
@@ -979,10 +980,17 @@ def add_user_to_building(id):
             return jsonify({"msg": "Elegir estado"}), 400
 
         if residente == "default":
-            departamento.residente = None
-            departamento.estado = estado
-            departamento.update()
-            return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            if propietario == "default":
+                departamento.residente = None
+                departamento.estado = estado
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            else:
+                departamento.residente = None
+                departamento.estado = estado
+                departamento.propietario = propietario
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
 
         residenteID = User.query.filter_by(id=residente).first()
             
@@ -990,20 +998,41 @@ def add_user_to_building(id):
             residenteName = User.query.filter_by(username=residente).first()
                 
             if residente:
-                departamento.residente = residenteName.id
-                departamento.estado = estado
-                departamento.update()
-                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+                if propietario == "default":
+                    departamento.residente = residenteName.id
+                    departamento.estado = estado
+                    departamento.update()
+                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+                else:
+                    departamento.residente = residenteName.id
+                    departamento.estado = estado
+                    departamento.propietario = propietario
+                    departamento.update()
+                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
             if not residenteName:
-                departamento.residente = None
+                if propietario == "default":
+                    departamento.residente = None
+                    departamento.estado = estado
+                    departamento.update()
+                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+                else:
+                    departamento.residente = None
+                    departamento.estado = estado
+                    departamento.propietario = propietario
+                    departamento.update()
+                    return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+        else:
+            if propietario == "default":
+                departamento.residente = residenteID.id
                 departamento.estado = estado
                 departamento.update()
                 return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
-        else:
-            departamento.residente = residenteID.id
-            departamento.estado = estado
-            departamento.update()
-            return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
+            else:
+                departamento.residente = residenteID.id
+                departamento.estado = estado
+                departamento.propietario = propietario
+                departamento.update()
+                return jsonify({"msg": "Departamento actualizado exitosamente"}), 200
 
 @app.route("/add-bodega/<id>", methods=['POST'])
 def add_bodega(id):
@@ -1422,7 +1451,12 @@ def montos_totales(id, mes = None):
 def depto_usuario(id):
     departamento_usuario = DepartamentoUsuario.query.filter_by(residente=id).first()
     if not departamento_usuario:
-        return jsonify({"msg": "No existe departamento para este usuario"}), 400
+        departamento_propietario = DepartamentoUsuario.query.filter_by(propietario=id).first()
+
+        if not departamento_propietario:
+            return jsonify({"msg": "No existe departamento para este usuario"}), 400
+        else:
+            return jsonify(departamento_propietario.serialize()), 200
         
     return jsonify(departamento_usuario.serialize()), 200
 
