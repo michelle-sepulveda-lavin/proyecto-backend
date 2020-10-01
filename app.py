@@ -1478,6 +1478,7 @@ def adm_del_edificio(id):
         return jsonify({"msg": "No hay administrador"}), 400
     else:
         return jsonify(administrador.serialize()), 200
+
 @app.route("/correo-gastos/<int:id>", methods=['POST'])
 def gastos_correo(id):
     monto = request.json.get("monto")
@@ -1503,7 +1504,15 @@ def gastos_correo(id):
         return jsonify({"msg": "Se ha enviado un email con el monto a pagar"}), 200
 
 
+@app.route("/infoDepartamentoEspecifico/<id>", methods=['GET'])
+def dpto_especifico(id):
+    departamento = DepartamentoUsuario.query.filter_by(id=id).first()
 
+    if not departamento:
+        return jsonify({"msg": "No existe departamento para este usuario"}), 400
+    else:
+        return jsonify(departamento.serialize()), 200
+        
 
 
 
