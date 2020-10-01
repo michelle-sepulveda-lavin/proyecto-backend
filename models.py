@@ -399,7 +399,8 @@ class GastoComun(db.Model):
             "estado": self.estado,
             "departamento": {"departamento_id": self.departamentosusuarios.id,
             "numero_depto": self.departamentosusuarios.numero_departamento,
-            "residente": self.departamentosusuarios.residente
+            "residente": self.departamentosusuarios.residente,
+            "propietario": self.departamentosusuarios.propietario
             },
             "edificio": self.edificio.id,
             "pago": self.pago
