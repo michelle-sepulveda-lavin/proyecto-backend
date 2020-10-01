@@ -1180,7 +1180,7 @@ def boletin(id = None, edificio = None):
     if request.method == 'GET':
         
         if edificio:
-            boletines_edificio = Boletin.query.get(edificio_id=edificio)
+            boletines_edificio = Boletin.query.filter_by(edificio_id=edificio)
             if not boletines_edificio:
                 return jsonify({"msg": "boletin no encontrado"}), 400
             else:
@@ -1527,7 +1527,7 @@ def gastos_correo(id, propietario):
 @app.route("/usuarios/edificio/<int:id>", methods=['GET'])
 def get_usuarios_edificio(id):
     
-    usuarios = User.query.filter_by(edificio_id=id)
+    usuarios = User.query.filter_by(edificio_id=id).all()
     if usuarios:
         return_usuario = list(map(lambda usuario: usuario.serialize(), usuarios))
         return jsonify(return_usuario), 200
@@ -1551,7 +1551,7 @@ def boletin_correo(id):
         return jsonify({"msg": "El nombre del edificio es requerido"}), 400
     
     usuario = User.query.filter_by(id=id).first()
-    
+
     if not usuario:
         return jsonify({"msg": "Este departamento no tiene cuenta registrada"}), 400
     else:
