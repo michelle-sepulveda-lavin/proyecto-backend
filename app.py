@@ -1486,7 +1486,7 @@ def gastos_correo(id, propietario):
     if not monto:
         return jsonify({"msg": "El monto es requerido"}), 400
     
-    if id == "prueba":
+    if id == "sinResidente":
 
         propietario_id = User.query.filter_by(id=propietario).first()
 
