@@ -32,7 +32,6 @@ Migrate(app, db)
 CORS(app)
 manager = Manager(app)
 manager.add_command("db", MigrateCommand)
-
 CORS(app)
 
 
@@ -86,8 +85,6 @@ def register(id=None, rol_id=None):
             return jsonify({"msg": "Email es obligatorio"}), 400
         if not username:
             return jsonify({"msg": "Nombre usuario es obligatorio"}), 400
-        if not edificio_id:
-            return jsonify({"msg": "Edificio es obligatorio"}), 400
 
         user = User.query.filter_by(username=username).first()
 
@@ -772,6 +769,16 @@ def crearConserje(id=None):
                 conserje.update()
 
         return jsonify({"Msg": "Conserje Actualizado"}), 200
+
+
+@app.route("/conserje/usuario/<int:id>", methods=['GET'])
+def conserje_usuario(id):
+    conserje = Conserje.query.filter_by(usuario_id=id).first()
+
+    if not conserje:
+        return jsonify({"msg": "no existe este conserje"}), 400
+
+    return jsonify(conserje.serialize()), 200
 
 
 @app.route("/conserjes/edificio/<int:id>", methods=['POST', 'GET', 'DELETE', 'PUT'])
@@ -1520,7 +1527,7 @@ def dpto_usuario_paqueteria(id):
 
 @app.route("/admnistradorEdificio/<id>", methods=['GET'])
 def adm_del_edificio(id):
-    administrador = User.query.filter_by(edificio_id=id, rol_id="2").first()
+    administrador = User.query.filter_by(edificio_id=id, rol_id="11").first()
 
     if not administrador:
         return jsonify({"msg": "No hay administrador"}), 400
