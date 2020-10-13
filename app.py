@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from config import Development
-from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, Paquete, MontosTotales, Boletin
+from models import db, User, Role, Plan, Edificio, InfoContacto, Departamento, DepartamentoUsuario, Conserje, Bodega, Estacionamiento, GastoComun, Paquete, MontosTotales, Boletin, NuevoResidente
 import json
 import os
 import sendgrid
@@ -202,7 +202,7 @@ def recuperacion():
     else:
         correo = User.query.filter_by(email=email).first()
         if not correo:
-            return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 404
+            return jsonify({"msg": f"Se ha enviado un email al correo {email} para reestablecer la contraseña"}), 404
         else:
             sg = sendgrid.SendGridAPIClient(api_key="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")
             from_email = Email("edificios.felices2020@gmail.com")
@@ -221,7 +221,7 @@ def recuperacion():
             print(response.status_code)
             print(response.body)
             print(response.headers)
-            return jsonify({"msg": "Se ha enviado un email para reestablecer la contraseña"}), 200
+            return jsonify({"msg": f"Se ha enviado un email al correo {email} para reestablecer la contraseña"}), 200
 
 @app.route("/reset-password", methods=['POST'])
 @jwt_required
@@ -1127,9 +1127,13 @@ def paqueteria(id):
             return jsonify({"msg": "El edificio no existe"}), 404
         else:
             numero_departamento = request.json.get("numero_departamento")
+            descripcion = request.json.get("descripcion")
 
             if not numero_departamento:
                 return jsonify({"msg": "Numero de departamento es obligatorio"}), 400
+            if not descripcion:
+                return jsonify({"msg": "La descripcion es obligatoria"}), 400
+            
             else:
                 departamento = DepartamentoUsuario.query.filter_by(numero_departamento=numero_departamento, edificio_id=id).first()
 
@@ -1138,6 +1142,7 @@ def paqueteria(id):
                 else:
                     paquete = Paquete()
                     paquete.departamento_id = departamento.id
+                    paquete.descripcion = descripcion
                     paquete.edificio_id = id
                     paquete.save()
 
@@ -1576,6 +1581,66 @@ def dpto_especifico(id):
         return jsonify({"msg": "No existe departamento para este usuario"}), 400
     else:
         return jsonify(departamento.serialize()), 200
+
+@app.route("/nuevosResidentes/<id>", methods=['GET', 'POST', 'PUT'])
+def nuevo_residente(id):
+    if request.method == 'POST':
+        edificio = Edificio.query.filter_by(id=id).first()
+
+        if not edificio:
+            return jsonify({"msg": "El edificio indicado no existe"}), 404
+        else:
+            username = request.json.get("username")
+            email = request.json.get("email")
+            numero_dpto = request.json.get("numero_dpto")
+            estado = request.json.get("estado")
+
+            if not username:
+                return jsonify({"msg": "El nombre completo es obligatorio"}), 400
+            if not email:
+                return jsonify({"msg": "El email es obligatorio"}), 400
+            if not numero_dpto:
+                return jsonify({"msg": "El numero de departamento es obligatorio"}), 400
+            if estado == None:
+                estado = False
+            
+            departamento = DepartamentoUsuario.query.filter_by(numero_departamento=numero_dpto, edificio_id=id).first()
+
+            if not departamento:
+                return jsonify({"msg": "El numero de departamento no existe"}), 404
+            else:
+                nuevo_residente = NuevoResidente()
+                nuevo_residente.username = username
+                nuevo_residente.email = email
+                nuevo_residente.numero_dpto = numero_dpto
+                nuevo_residente.edificio_id = id
+                nuevo_residente.estado = estado
+                nuevo_residente.save()
+                return jsonify({"msg": "La solicitud ha sido enviada"}), 200
+
+    if request.method == 'GET':
+        residentes = NuevoResidente.query.filter_by(edificio_id=id, estado=False).all()
+        if not residentes:
+            return jsonify({"msg": "No hay residentes nuevos por agregar"}), 404
+        else:
+            residentes = list(map(lambda residente: residente.serialize(), residentes))
+            return jsonify(residentes), 200
+    if request.method == 'PUT':
+        residente = NuevoResidente.query.filter_by(id=id).first()
+        if not residente:
+            return jsonify({"msg": "No existe el residente"}), 404
+        else:
+            estado = request.json.get("estado")
+
+            residente.estado = estado
+            residente.update()
+
+            return jsonify({"msg": "residente actualizado"}), 200
+            
+
+            
+
+        
         
 
 

@@ -169,6 +169,7 @@ class Edificio(db.Model):
     gastos_comunes = db.relationship("GastoComun", backref="edificio")
     montos_totales = db.relationship("MontosTotales", backref="edificio")
     boletines = db.relationship("Boletin", backref="edificio")
+    nuevosresidentes = db.relationship("NuevoResidente", backref="edificio")
 
 
     def serialize(self):
@@ -283,8 +284,8 @@ class DepartamentoUsuario(db.Model):
     estado = db.Column(db.String(120), nullable=False)    
     residente = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     propietario = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    bodega_id = db.Column(db.Integer, nullable=True, unique=True) 
-    estacionamiento_id = db.Column(db.Integer, nullable=True, unique=True)
+    bodega_id = db.Column(db.Integer, nullable=True) 
+    estacionamiento_id = db.Column(db.Integer, nullable=True)
     piso = db.Column(db.Integer, nullable=True)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
     modelo_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'), nullable=False) 
@@ -485,6 +486,7 @@ class Paquete(db.Model):
     departamento_id = db.Column(db.Integer, db.ForeignKey('departamentosusuarios.id'), nullable=False)
     edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'), nullable=False)
     estado = db.Column(db.Boolean, nullable=True, default=False)
+    descripcion = db.Column(db.String(120), nullable=True)
     
     def serialize(self):
         return{
@@ -500,6 +502,7 @@ class Paquete(db.Model):
                 "piso": self.departamentoUsuario.piso
             },
             "estado": self.estado,
+            "descripcion": self.descripcion
             
         }
         
@@ -514,3 +517,33 @@ class Paquete(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+
+class NuevoResidente(db.Model):
+    __tablename__ = "nuevosresidentes"
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    edificio_id = db.Column(db.Integer,  db.ForeignKey('edificios.id'), nullable=False)
+    numero_dpto = db.Column(db.Integer, nullable=False)
+    estado = db.Column(db.Boolean, nullable=True, default=False)
+
+    def serialize(self):
+        return{
+            "id" : self.id,
+            "username": self.username,
+            "email": self.email,
+            "edificio_id": self.edificio_id,
+            "numero_dpto": self.numero_dpto,
+            "estado": self.estado
+        }
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
